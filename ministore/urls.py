@@ -1,14 +1,12 @@
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import path
-
-
-def health(_: object):
-    return JsonResponse({"status": "ok"})
+from ministore import views
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("health/", health),
+    path("backend-healthcheck/", views.backend_healthcheck, name="backend_healthcheck"),
+    path("db-healthcheck/", views.db_healthcheck, name="db_healthcheck"),
 ]
 

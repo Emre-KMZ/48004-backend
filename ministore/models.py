@@ -2,6 +2,10 @@ from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.db.models.signals import pre_save, post_delete
+from django.dispatch import receiver
+from django.core.files.storage import default_storage
+import time
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -59,6 +63,10 @@ class Category(models.Model):
         return self.name
 
 
+def product_image_path(instance, filename):
+    ext = filename.split('.')[-1]
+    return f'products/images/product_{instance.id}_{int(time.time())}.{ext}'
+
 class Product(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -73,7 +81,7 @@ class Product(models.Model):
         on_delete=models.CASCADE,
         related_name="products",
     )
-    image_url = models.URLField(blank=True)
+    image = models.ImageField(upload_to=product_image_path, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -173,3 +181,22 @@ class OrderItem(models.Model):
     @property
     def line_total(self):
         return self.product_price * self.quantity
+
+# Disk File Cleanup Hooks
+@receiver(post_delete, sender=Product)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    if instance.image and default_storage.exists(instance.image.name):
+        default_storage.delete(instance.image.name)
+
+@receiver(pre_save, sender=Product)
+def auto_delete_file_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return False
+    try:
+        old_file = Product.objects.get(pk=instance.pk).image
+    except Product.DoesNotExist:
+        return False
+    
+    new_file = instance.image
+    if not old_file == new_file and old_file and default_storage.exists(old_file.name):
+        default_storage.delete(old_file.name)

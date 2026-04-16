@@ -105,3 +105,60 @@ def login_user(request):
 
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid request body format."}, status=400)
+
+
+from .models import Product
+
+@csrf_exempt
+def upload_product_image(request, product_id):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    try:
+        product = Product.objects.get(pk=product_id)
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Product not found"}, status=404)
+        
+    if 'image' not in request.FILES:
+        return JsonResponse({"error": "No image file provided"}, status=400)
+        
+    file = request.FILES['image']
+    
+    # Requirement 4: Limit to 6MB
+    max_size = 6 * 1024 * 1024
+    if file.size > max_size:
+        return JsonResponse({"error": "File size exceeds 6MB limit."}, status=400)
+        
+    # Requirement 4: Restrict MIME types
+    allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+    if file.content_type not in allowed_types:
+        return JsonResponse({"error": "Invalid file type. Only JPEG, PNG, WEBP are accepted."}, status=400)
+        
+    # Save natively delegates to product_image_path uniquely renaming it and pre_save/post_delete clears disk seamlessly
+    product.image = file
+    product.save()
+    
+    return JsonResponse({
+        "message": "Image uploaded successfully",
+        "image_url": product.image.url
+    }, status=200)
+
+@csrf_exempt
+def list_products(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    products = Product.objects.all()
+    serialized = []
+    for p in products:
+        serialized.append({
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "price": str(p.price),
+            "stock": p.stock,
+            "image_url": p.image.url if p.image else None,
+            "is_active": p.is_active
+        })
+        
+    return JsonResponse({"products": serialized}, status=200)

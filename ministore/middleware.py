@@ -12,6 +12,7 @@ class JWTSecurityMiddleware:
         self.open_paths = [
             '/api/login/',
             '/api/register/',
+            '/api/products/',
         ]
 
     def __call__(self, request):

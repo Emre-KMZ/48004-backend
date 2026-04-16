@@ -65,3 +65,43 @@ def register_customer(request):
         
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid request body format."}, status=400)
+
+
+import jwt
+from datetime import datetime, timedelta
+from django.conf import settings
+
+@csrf_exempt
+def login_user(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    try:
+        data = json.loads(request.body)
+        email = data.get("email", "").strip()
+        password = data.get("password", "")
+
+        user = CustomUser.objects.filter(email=email).first()
+        
+        # Constraint 1: Generic failure response (prevent enumeration)
+        if not user or not user.check_password(password):
+            return JsonResponse({"error": "Invalid email or password"}, status=400)
+
+        # Requirement 3 & 4 & Constraint 4: Produce 2-hour JWT Payload
+        payload = {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+            "exp": datetime.utcnow() + timedelta(hours=2)
+        }
+        
+        token = jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
+        
+        return JsonResponse({
+            "token": token,
+            "role": user.role,
+            "email": user.email
+        }, status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body format."}, status=400)

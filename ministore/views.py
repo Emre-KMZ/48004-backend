@@ -1,5 +1,7 @@
+import json
 from django.http import JsonResponse
-from .models import StoreStatus
+from django.views.decorators.csrf import csrf_exempt
+from .models import StoreStatus, CustomUser
 
 def backend_healthcheck(request):
     return JsonResponse({"status": "healthy"})
@@ -21,3 +23,45 @@ def db_healthcheck(request):
         })
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+import re
+
+@csrf_exempt
+def register_customer(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        email = data.get("email", "").strip()
+        full_name = data.get("full_name", "").strip()
+        password = data.get("password", "")
+        
+        # Constraint: Missing fields
+        if not email or not full_name or not password:
+            return JsonResponse({"error": "Please provide full name, email, and password."}, status=400)
+            
+        # Email Validation regex fallback
+        if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            return JsonResponse({"error": "Invalid email formatting."}, status=400)
+            
+        # Password Complexity Validation
+        if len(password) <= 5 or not re.search(r"[A-Z]", password) or not re.search(r"[a-z]", password) or not re.search(r"\d", password):
+            return JsonResponse({"error": "Password does not meet complexity requirements."}, status=400)
+
+        # Requirement 3: Check email uniqueness
+        if CustomUser.objects.filter(email=email).exists():
+            return JsonResponse({"error": "This email is already registered."}, status=400)
+            
+        # Constraint 2 & Requirement 4: Explicitly force role to "Customer", ignoring payload
+        user = CustomUser.objects.create_user(
+            email=email,
+            password=password,
+            full_name=full_name,
+            role="Customer"
+        )
+        
+        return JsonResponse({"message": "Registration successful"}, status=201)
+        
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body format."}, status=400)

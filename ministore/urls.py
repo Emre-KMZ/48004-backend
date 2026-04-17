@@ -14,7 +14,12 @@ urlpatterns = [
     
     # Public Lookups
     path("api/products/", views.list_products, name="list_products"),
+    path("api/products/<int:product_id>/", views.public_product_details, name="public_product_details"),
     path("api/categories/", views.list_categories, name="list_categories"),
+    
+    # Authenticated Shopping APIs
+    path("api/cart/", views.cart_ops, name="cart_ops"),
+    path("api/cart/sync/", views.cart_sync, name="cart_sync"),
     
     # Protected Admin Routes
     path("api/admin/categories/", views.admin_add_category, name="admin_add_category"),

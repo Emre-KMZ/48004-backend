@@ -107,7 +107,8 @@ def login_user(request):
         return JsonResponse({"error": "Invalid request body format."}, status=400)
 
 
-from .models import Product, ProductImage, Category
+from django.db.models import Q
+from .models import Product, ProductImage, Category, Cart, CartItem
 
 # ----------------------------
 # CATEGORY APIS
@@ -147,7 +148,16 @@ def admin_delete_category(request, category_id):
 def list_products(request):
     if request.method != "GET":
         return JsonResponse({"error": "Method not allowed"}, status=405)
+        
+    q_search = request.GET.get("search", "").strip()
+    q_category = request.GET.get("category", "").strip()
+
     products = Product.objects.all()
+    if q_search:
+        products = products.filter(Q(name__icontains=q_search) | Q(keywords__icontains=q_search) | Q(description__icontains=q_search))
+    if q_category:
+        products = products.filter(category__name__iexact=q_category)
+
     serialized = []
     for p in products:
         serialized.append({
@@ -302,5 +312,91 @@ def admin_reorder_images(request):
             except ProductImage.DoesNotExist:
                 continue
         return JsonResponse({"message": "Reordered Successfully"}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400)
+
+@csrf_exempt
+def public_product_details(request, product_id):
+    if request.method != "GET": return JsonResponse({"error": "Method not allowed"}, status=405)
+    try:
+        p = Product.objects.get(pk=product_id)
+        data = {
+            "id": p.id,
+            "name": p.name,
+            "description": p.description,
+            "keywords": p.keywords,
+            "price": str(p.price),
+            "stock": p.stock,
+            "category_name": p.category.name if p.category else None,
+            "images": [{"id": img.id, "url": img.image.url} for img in p.images.all()]
+        }
+        return JsonResponse(data, status=200)
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Not Found"}, status=404)
+
+@csrf_exempt
+def cart_ops(request):
+    if not hasattr(request, 'user'): return JsonResponse({"error": "Unauthorized. Must be logged in."}, status=401)
+    user = request.user
+    cart, _ = Cart.objects.get_or_create(user=user)
+
+    if request.method == "GET":
+        items = []
+        for i in cart.items.all():
+            items.append({
+                "id": i.id,
+                "product_id": i.product.id,
+                "name": i.product.name,
+                "price": str(i.product.price),
+                "quantity": i.quantity,
+                "image_url": i.product.images.first().image.url if i.product.images.exists() else None
+            })
+        return JsonResponse({"cart_id": cart.id, "items": items, "total": str(cart.total_price)}, status=200)
+
+    elif request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            product_id = data.get('product_id')
+            qty = int(data.get('quantity', 1))
+            prod = Product.objects.get(pk=product_id)
+            item, created = CartItem.objects.get_or_create(cart=cart, product=prod)
+            if not created:
+                item.quantity += qty
+            else:
+                item.quantity = qty
+            item.save()
+            return JsonResponse({"message": "Added to cart"}, status=200)
+        except Product.DoesNotExist:
+            return JsonResponse({"error": "Product not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@csrf_exempt
+def cart_sync(request):
+    if request.method != "POST": return JsonResponse({"error": "Method not allowed"}, status=405)
+    if not hasattr(request, 'user'): return JsonResponse({"error": "Unauthorized"}, status=401)
+    
+    user = request.user
+    cart, _ = Cart.objects.get_or_create(user=user)
+    
+    try:
+        data = json.loads(request.body)
+        items = data.get('items', [])
+        for local_item in items:
+            try:
+                prod = Product.objects.get(pk=local_item['product_id'])
+                qty = int(local_item.get('quantity', 1))
+                db_item, created = CartItem.objects.get_or_create(cart=cart, product=prod)
+                if not created:
+                    db_item.quantity += qty
+                else:
+                    db_item.quantity = qty
+                db_item.save()
+            except Product.DoesNotExist:
+                continue
+                
+        return JsonResponse({"message": "Cart synchronized successfully"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)

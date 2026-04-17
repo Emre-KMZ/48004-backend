@@ -5,7 +5,9 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
 from django.core.files.storage import default_storage
+from django.core.files.storage import default_storage
 import time
+import uuid
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -65,11 +67,13 @@ class Category(models.Model):
 
 def product_image_path(instance, filename):
     ext = filename.split('.')[-1]
-    return f'products/images/product_{instance.id}_{int(time.time())}.{ext}'
+    prod_id = instance.product.id if instance.product else "new"
+    return f'products/images/product_{prod_id}_{uuid.uuid4().hex[:8]}.{ext}'
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    keywords = models.TextField(blank=True)
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -78,10 +82,11 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     category = models.ForeignKey(
         Category,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="products",
     )
-    image = models.ImageField(upload_to=product_image_path, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,6 +100,18 @@ class Product(models.Model):
     @property
     def in_stock(self):
         return self.stock > 0
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=product_image_path)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
 
 
 class Cart(models.Model):
@@ -183,18 +200,19 @@ class OrderItem(models.Model):
         return self.product_price * self.quantity
 
 # Disk File Cleanup Hooks
-@receiver(post_delete, sender=Product)
+# Disk File Cleanup Hooks mapped to ProductImage explicitly
+@receiver(post_delete, sender=ProductImage)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     if instance.image and default_storage.exists(instance.image.name):
         default_storage.delete(instance.image.name)
 
-@receiver(pre_save, sender=Product)
+@receiver(pre_save, sender=ProductImage)
 def auto_delete_file_on_change(sender, instance, **kwargs):
     if not instance.pk:
         return False
     try:
-        old_file = Product.objects.get(pk=instance.pk).image
-    except Product.DoesNotExist:
+        old_file = ProductImage.objects.get(pk=instance.pk).image
+    except ProductImage.DoesNotExist:
         return False
     
     new_file = instance.image

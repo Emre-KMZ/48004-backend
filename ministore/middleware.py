@@ -13,6 +13,7 @@ class JWTSecurityMiddleware:
             '/api/login/',
             '/api/register/',
             '/api/products/',
+            '/api/categories/',
         ]
 
     def __call__(self, request):

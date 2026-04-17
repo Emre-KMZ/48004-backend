@@ -11,8 +11,20 @@ urlpatterns = [
     path("db-healthcheck/", views.db_healthcheck, name="db_healthcheck"),
     path("api/register/", views.register_customer, name="register_customer"),
     path("api/login/", views.login_user, name="login_user"),
+    
+    # Public Lookups
     path("api/products/", views.list_products, name="list_products"),
-    path("api/admin/products/<int:product_id>/image/", views.upload_product_image, name="upload_product_image"),
+    path("api/categories/", views.list_categories, name="list_categories"),
+    
+    # Protected Admin Routes
+    path("api/admin/categories/", views.admin_add_category, name="admin_add_category"),
+    path("api/admin/categories/<int:category_id>/", views.admin_delete_category, name="admin_delete_category"),
+    
+    path("api/admin/products/", views.admin_add_product, name="admin_add_product"),
+    path("api/admin/products/<int:product_id>/", views.product_details, name="product_details"),
+    path("api/admin/products/<int:product_id>/images/", views.admin_product_images, name="admin_product_images"),
+    path("api/admin/product-images/<int:img_id>/", views.admin_delete_image, name="admin_delete_image"),
+    path("api/admin/product-images/reorder/", views.admin_reorder_images, name="admin_reorder_images"),
 ]
 
 if settings.DEBUG:

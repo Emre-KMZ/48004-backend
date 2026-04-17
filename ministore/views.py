@@ -336,8 +336,11 @@ def public_product_details(request, product_id):
 
 @csrf_exempt
 def cart_ops(request):
-    if not hasattr(request, 'user'): return JsonResponse({"error": "Unauthorized. Must be logged in."}, status=401)
-    user = request.user
+    if not hasattr(request, 'jwt_payload'): return JsonResponse({"error": "Unauthorized. Must be logged in."}, status=401)
+    try:
+        user = CustomUser.objects.get(id=request.jwt_payload['id'])
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Unauthorized. Security exception."}, status=401)
     cart, _ = Cart.objects.get_or_create(user=user)
 
     if request.method == "GET":
@@ -376,9 +379,11 @@ def cart_ops(request):
 @csrf_exempt
 def cart_sync(request):
     if request.method != "POST": return JsonResponse({"error": "Method not allowed"}, status=405)
-    if not hasattr(request, 'user'): return JsonResponse({"error": "Unauthorized"}, status=401)
-    
-    user = request.user
+    if not hasattr(request, 'jwt_payload'): return JsonResponse({"error": "Unauthorized"}, status=401)
+    try:
+        user = CustomUser.objects.get(id=request.jwt_payload['id'])
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Unauthorized. Security exception."}, status=401)
     cart, _ = Cart.objects.get_or_create(user=user)
     
     try:

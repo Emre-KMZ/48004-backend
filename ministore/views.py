@@ -405,3 +405,49 @@ def cart_sync(request):
         return JsonResponse({"message": "Cart synchronized successfully"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
+
+
+# User Order History API
+# Returns only the authenticated user's past orders
+# Sorted by newest first
+
+from .models import Order, CustomUser
+import jwt
+from django.conf import settings
+
+def get_authenticated_user(request):
+    auth_header = request.headers.get("Authorization", "")
+
+    if not auth_header.startswith("Bearer "):
+        return None
+
+    token = auth_header.split(" ")[1]
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        return CustomUser.objects.get(id=payload["id"])
+    except Exception:
+        return None
+    
+@csrf_exempt
+def user_order_history(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    user = get_authenticated_user(request)
+
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    orders = Order.objects.filter(user=user).order_by("-created_at")
+
+    data = []
+    for order in orders:
+        data.append({
+            "order_id": order.id,
+            "created_at": order.created_at,
+            "status": order.status,
+            "total_price": str(order.total_price),
+        })
+
+    return JsonResponse({"orders": data}, status=200)

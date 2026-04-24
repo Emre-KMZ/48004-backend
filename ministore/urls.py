@@ -20,7 +20,8 @@ urlpatterns = [
     # Authenticated Shopping APIs
     path("api/cart/", views.cart_ops, name="cart_ops"),
     path("api/cart/sync/", views.cart_sync, name="cart_sync"),
-    
+    path("api/orders/history/", views.user_order_history, name="user_order_history"),
+
     # Protected Admin Routes
     path("api/admin/categories/", views.admin_add_category, name="admin_add_category"),
     path("api/admin/categories/<int:category_id>/", views.admin_delete_category, name="admin_delete_category"),

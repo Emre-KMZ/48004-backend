@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/categories/", views.list_categories, name="list_categories"),
     
     # Authenticated Shopping APIs
+    path("api/checkout/", views.checkout, name="checkout"),
     path("api/cart/", views.cart_ops, name="cart_ops"),
     path("api/cart/sync/", views.cart_sync, name="cart_sync"),
     path("api/cart/<int:item_id>/", views.cart_item_ops, name="cart_item_ops"),

@@ -457,6 +457,55 @@ def user_order_history(request):
     return JsonResponse({"orders": data}, status=200)
 
 
+from django.db import transaction
+from .models import Order, OrderItem
+
+@csrf_exempt
+def checkout(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    if not hasattr(request, 'jwt_payload'):
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    try:
+        user = CustomUser.objects.get(id=request.jwt_payload['id'])
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    try:
+        data = json.loads(request.body)
+        shipping_address = data.get('shipping_address', '').strip()
+        if not shipping_address:
+            return JsonResponse({"error": "Shipping address is required"}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body"}, status=400)
+
+    cart = Cart.objects.filter(user=user).first()
+    if not cart or not cart.items.exists():
+        return JsonResponse({"error": "Your cart is empty"}, status=400)
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.create(
+                user=user,
+                total_price=cart.total_price,
+                shipping_address=shipping_address,
+                status=Order.Status.PENDING,
+            )
+            for item in cart.items.select_related('product'):
+                OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    product_name=item.product.name,
+                    product_price=item.product.price,
+                    quantity=item.quantity,
+                )
+            cart.items.all().delete()
+        return JsonResponse({"order_id": order.id, "message": "Order placed successfully"}, status=201)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 @csrf_exempt
 def cart_item_ops(request, item_id):
     if not hasattr(request, 'jwt_payload'):

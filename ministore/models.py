@@ -124,7 +124,7 @@ class Cart(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Cart of {self.user.username}"
+        return f"Cart of {self.user.email}"
 
     @property
     def total_price(self):
@@ -180,7 +180,7 @@ class Order(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"Order #{self.pk} by {self.user.username}"
+        return f"Order #{self.pk} by {self.user.email}"
 
 
 class OrderItem(models.Model):

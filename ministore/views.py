@@ -356,6 +356,10 @@ def cart_ops(request):
             })
         return JsonResponse({"cart_id": cart.id, "items": items, "total": str(cart.total_price)}, status=200)
 
+    elif request.method == "DELETE":
+        cart.items.all().delete()
+        return JsonResponse({"message": "Cart cleared"}, status=200)
+
     elif request.method == "POST":
         try:
             data = json.loads(request.body)
@@ -451,3 +455,36 @@ def user_order_history(request):
         })
 
     return JsonResponse({"orders": data}, status=200)
+
+
+@csrf_exempt
+def cart_item_ops(request, item_id):
+    if not hasattr(request, 'jwt_payload'):
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+    try:
+        user = CustomUser.objects.get(id=request.jwt_payload['id'])
+    except CustomUser.DoesNotExist:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    try:
+        item = CartItem.objects.get(pk=item_id, cart__user=user)
+    except CartItem.DoesNotExist:
+        return JsonResponse({"error": "Item not found"}, status=404)
+
+    if request.method == "PUT":
+        try:
+            data = json.loads(request.body)
+            qty = int(data.get('quantity', 1))
+            if qty < 1:
+                return JsonResponse({"error": "Quantity must be at least 1"}, status=400)
+            item.quantity = qty
+            item.save()
+            return JsonResponse({"message": "Quantity updated"}, status=200)
+        except (ValueError, json.JSONDecodeError):
+            return JsonResponse({"error": "Invalid data"}, status=400)
+
+    elif request.method == "DELETE":
+        item.delete()
+        return JsonResponse({"message": "Item removed"}, status=200)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)

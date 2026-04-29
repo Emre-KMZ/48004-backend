@@ -52,9 +52,16 @@ class StoreStatus(models.Model):
         return self.store_name
 
 
+def category_image_path(instance, filename):
+    ext = filename.split('.')[-1]
+    timestamp = int(time.time())
+    return f'categories/images/cat_{timestamp}_{uuid.uuid4().hex[:6]}.{ext}'
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
+    slug = models.SlugField(max_length=150, unique=True, blank=True, null=True)
+    image = models.ImageField(upload_to=category_image_path, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -63,6 +70,12 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 def product_image_path(instance, filename):

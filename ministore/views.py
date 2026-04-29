@@ -475,8 +475,16 @@ def checkout(request):
     try:
         data = json.loads(request.body)
         shipping_address = data.get('shipping_address', '').strip()
+        contact_name = data.get('contact_name', '').strip()
+        contact_email = data.get('contact_email', '').strip()
+        contact_phone = data.get('contact_phone', '').strip()
+
         if not shipping_address:
             return JsonResponse({"error": "Shipping address is required"}, status=400)
+
+        if not contact_name or not contact_email:
+            return JsonResponse({"error": "Contact name and email are required"}, status=400)
+
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid request body"}, status=400)
 
@@ -490,6 +498,9 @@ def checkout(request):
                 user=user,
                 total_price=cart.total_price,
                 shipping_address=shipping_address,
+                contact_name=contact_name,
+                contact_email=contact_email,
+                contact_phone=contact_phone,
                 status=Order.Status.PENDING,
             )
             for item in cart.items.select_related('product'):
@@ -574,7 +585,9 @@ def order_detail(request, order_id):
 
         # Historical snapshot saved on the order
         "shipping_address": order.shipping_address,
-
+        "contact_name": order.contact_name,
+        "contact_email": order.contact_email,
+        "contact_phone": order.contact_phone,
         "items": items,
     }
 

@@ -173,6 +173,9 @@ class Order(models.Model):
     )
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     shipping_address = models.TextField()
+    contact_name = models.CharField(max_length=255, blank=True, default="")
+    contact_email = models.EmailField(blank=True, default="")
+    contact_phone = models.CharField(max_length=50, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

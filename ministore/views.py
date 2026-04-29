@@ -537,3 +537,45 @@ def cart_item_ops(request, item_id):
         return JsonResponse({"message": "Item removed"}, status=200)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@csrf_exempt
+def order_detail(request, order_id):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    user = get_authenticated_user(request)
+
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    try:
+        # Ownership guard:
+        # If the order does not belong to this user, return 404.
+        order = Order.objects.prefetch_related("items").get(id=order_id, user=user)
+    except Order.DoesNotExist:
+        return JsonResponse({"error": "Order not found"}, status=404)
+
+    items = []
+    for item in order.items.all():
+        items.append({
+            "id": item.id,
+            "product_id": item.product.id if item.product else None,
+            "product_name": item.product_name,
+            "price_at_purchase": str(item.product_price),
+            "quantity": item.quantity,
+            "line_total": str(item.line_total),
+        })
+
+    data = {
+        "order_id": order.id,
+        "created_at": order.created_at,
+        "status": order.status,
+        "total_price": str(order.total_price),
+
+        # Historical snapshot saved on the order
+        "shipping_address": order.shipping_address,
+
+        "items": items,
+    }
+
+    return JsonResponse(data, status=200)

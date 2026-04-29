@@ -23,6 +23,7 @@ urlpatterns = [
     path("api/cart/sync/", views.cart_sync, name="cart_sync"),
     path("api/cart/<int:item_id>/", views.cart_item_ops, name="cart_item_ops"),
     path("api/orders/history/", views.user_order_history, name="user_order_history"),
+    path("api/orders/<int:order_id>/", views.order_detail, name="order_detail"),
 
     # Protected Admin Routes
     path("api/admin/categories/", views.admin_add_category, name="admin_add_category"),

@@ -596,7 +596,7 @@ def order_detail(request, order_id):
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum, Count
-from django.db.models.functions import TruncDay, TruncMonth
+from django.db.models.functions import TruncDay, TruncMonth, TruncWeek
 from decimal import Decimal
 
 
@@ -686,7 +686,10 @@ def admin_stats_graph_data(request):
     end_date = timezone.now()
     start_date = end_date - timedelta(days=range_days)
 
-    trunc_func = TruncMonth if period == "monthly" else TruncDay
+    if period == "weekly":
+        trunc_func = TruncWeek
+    else:
+        trunc_func = TruncDay
 
     revenue_data = (
         Order.objects

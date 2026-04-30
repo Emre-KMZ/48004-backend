@@ -670,7 +670,6 @@ def admin_stats_summary(request):
         "total_customers": total_customers,
     }, status=200)
 
-
 @csrf_exempt
 def admin_stats_graph_data(request):
     if request.method != "GET":
@@ -683,7 +682,7 @@ def admin_stats_graph_data(request):
     period = request.GET.get("period", "daily")
     range_days = int(request.GET.get("range", 30))
 
-    end_date = timezone.now()
+    end_date = timezone.now().date()
     start_date = end_date - timedelta(days=range_days)
 
     if period == "weekly":
@@ -691,68 +690,60 @@ def admin_stats_graph_data(request):
     else:
         trunc_func = TruncDay
 
-    revenue_data = (
+    revenue_rows = (
         Order.objects
         .filter(
             status__in=SUCCESSFUL_ORDER_STATUSES,
-            created_at__gte=start_date,
-            created_at__lte=end_date
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date
         )
         .annotate(date=trunc_func("created_at"))
         .values("date")
-        .annotate(total_revenue=Sum("total_price"))
+        .annotate(revenue=Sum("total_price"))
         .order_by("date")
     )
 
-    orders_data = (
+    order_rows = (
         Order.objects
-        .filter(created_at__gte=start_date, created_at__lte=end_date)
+        .filter(
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date
+        )
         .annotate(date=trunc_func("created_at"))
         .values("date")
-        .annotate(order_count=Count("id"))
+        .annotate(orders=Count("id"))
         .order_by("date")
     )
 
-    customers_data = (
-        CustomUser.objects
-        .filter(
-            role="Customer",
-            is_staff=False,
-            is_superuser=False,
-            date_joined__gte=start_date,
-            date_joined__lte=end_date
-        )
-        .annotate(date=trunc_func("date_joined"))
-        .values("date")
-        .annotate(customer_count=Count("id"))
-        .order_by("date")
-    )
+    revenue_map = {
+        row["date"].date().isoformat(): row["revenue"] or Decimal("0.00")
+        for row in revenue_rows
+    }
 
-    return JsonResponse({
-        "revenue_trend": [
-            {
-                "date": item["date"].date().isoformat(),
-                "total_revenue": str(item["total_revenue"])
-            }
-            for item in revenue_data
-        ],
-        "orders_trend": [
-            {
-                "date": item["date"].date().isoformat(),
-                "order_count": item["order_count"]
-            }
-            for item in orders_data
-        ],
-        "customer_acquisition_trend": [
-            {
-                "date": item["date"].date().isoformat(),
-                "customer_count": item["customer_count"]
-            }
-            for item in customers_data
-        ],
-    }, status=200)
+    orders_map = {
+        row["date"].date().isoformat(): row["orders"] or 0
+        for row in order_rows
+    }
 
+    graph_data = []
 
+    current_date = start_date
+    while current_date <= end_date:
+        date_key = current_date.isoformat()
+
+        graph_data.append({
+            "date": date_key,
+            "revenue": float(revenue_map.get(date_key, Decimal("0.00"))),
+            "orders": orders_map.get(date_key, 0),
+        })
+
+        if period == "weekly":
+            current_date += timedelta(days=7)
+        else:
+            current_date += timedelta(days=1)
+
+    return JsonResponse(graph_data, safe=False, status=200)
+    
 @csrf_exempt
 def admin_stats_insights(request):
     if request.method != "GET":

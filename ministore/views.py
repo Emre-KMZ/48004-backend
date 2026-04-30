@@ -592,3 +592,186 @@ def order_detail(request, order_id):
     }
 
     return JsonResponse(data, status=200)
+
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDay, TruncMonth
+from decimal import Decimal
+
+
+SUCCESSFUL_ORDER_STATUSES = [
+    Order.Status.PROCESSING,
+    Order.Status.SHIPPED,
+    Order.Status.DELIVERED,
+]
+
+
+def is_admin_user(request):
+    user = get_authenticated_user(request)
+
+    if not user:
+        return None
+
+    if user.role == "Admin" or user.is_staff or user.is_superuser:
+        return user
+
+    return None
+
+
+def parse_date_range(request):
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    queryset_filter = {}
+
+    if start_date:
+        queryset_filter["created_at__date__gte"] = start_date
+
+    if end_date:
+        queryset_filter["created_at__date__lte"] = end_date
+
+    return queryset_filter
+
+
+@csrf_exempt
+def admin_stats_summary(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    date_filter = parse_date_range(request)
+
+    successful_orders = Order.objects.filter(
+        status__in=SUCCESSFUL_ORDER_STATUSES,
+        **date_filter
+    )
+
+    all_orders = Order.objects.filter(**date_filter)
+
+    total_revenue = successful_orders.aggregate(
+        total=Sum("total_price")
+    )["total"] or Decimal("0.00")
+
+    total_orders = all_orders.count()
+
+    total_customers = CustomUser.objects.filter(
+        role="Customer",
+        is_staff=False,
+        is_superuser=False
+    ).count()
+
+    return JsonResponse({
+        "total_revenue": str(total_revenue),
+        "total_orders": total_orders,
+        "total_customers": total_customers,
+    }, status=200)
+
+
+@csrf_exempt
+def admin_stats_graph_data(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    period = request.GET.get("period", "daily")
+    range_days = int(request.GET.get("range", 30))
+
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=range_days)
+
+    trunc_func = TruncMonth if period == "monthly" else TruncDay
+
+    revenue_data = (
+        Order.objects
+        .filter(
+            status__in=SUCCESSFUL_ORDER_STATUSES,
+            created_at__gte=start_date,
+            created_at__lte=end_date
+        )
+        .annotate(date=trunc_func("created_at"))
+        .values("date")
+        .annotate(total_revenue=Sum("total_price"))
+        .order_by("date")
+    )
+
+    orders_data = (
+        Order.objects
+        .filter(created_at__gte=start_date, created_at__lte=end_date)
+        .annotate(date=trunc_func("created_at"))
+        .values("date")
+        .annotate(order_count=Count("id"))
+        .order_by("date")
+    )
+
+    customers_data = (
+        CustomUser.objects
+        .filter(
+            role="Customer",
+            is_staff=False,
+            is_superuser=False,
+            date_joined__gte=start_date,
+            date_joined__lte=end_date
+        )
+        .annotate(date=trunc_func("date_joined"))
+        .values("date")
+        .annotate(customer_count=Count("id"))
+        .order_by("date")
+    )
+
+    return JsonResponse({
+        "revenue_trend": [
+            {
+                "date": item["date"].date().isoformat(),
+                "total_revenue": str(item["total_revenue"])
+            }
+            for item in revenue_data
+        ],
+        "orders_trend": [
+            {
+                "date": item["date"].date().isoformat(),
+                "order_count": item["order_count"]
+            }
+            for item in orders_data
+        ],
+        "customer_acquisition_trend": [
+            {
+                "date": item["date"].date().isoformat(),
+                "customer_count": item["customer_count"]
+            }
+            for item in customers_data
+        ],
+    }, status=200)
+
+
+@csrf_exempt
+def admin_stats_insights(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    top_selling_products = (
+        OrderItem.objects
+        .filter(order__status__in=SUCCESSFUL_ORDER_STATUSES)
+        .values("product_id", "product_name")
+        .annotate(total_quantity=Sum("quantity"))
+        .order_by("-total_quantity")[:5]
+    )
+
+    low_stock_products = Product.objects.filter(stock__lt=5).values(
+        "id", "name", "stock"
+    ).order_by("stock")
+
+    return JsonResponse({
+        "top_selling_products": list(top_selling_products),
+        "low_stock_products": list(low_stock_products),
+    }, status=200)

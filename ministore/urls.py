@@ -34,6 +34,10 @@ urlpatterns = [
     path("api/admin/products/<int:product_id>/images/", views.admin_product_images, name="admin_product_images"),
     path("api/admin/product-images/<int:img_id>/", views.admin_delete_image, name="admin_delete_image"),
     path("api/admin/product-images/reorder/", views.admin_reorder_images, name="admin_reorder_images"),
+
+    path("api/admin/stats/summary/", views.admin_stats_summary, name="admin_stats_summary"),
+    path("api/admin/stats/graph-data/", views.admin_stats_graph_data, name="admin_stats_graph_data"),
+    path("api/admin/stats/insights/", views.admin_stats_insights, name="admin_stats_insights"),
 ]
 
 if settings.DEBUG:

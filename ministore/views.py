@@ -108,7 +108,68 @@ def login_user(request):
 
 
 from django.db.models import Q
-from .models import Product, ProductImage, Category, Cart, CartItem
+from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem
+from django.db import transaction
+
+
+INVENTORY_CHANGED_ERROR = "Inventory changed: Some items in your cart are no longer available."
+
+
+def serialize_cart_item(item):
+    product = item.product
+    return {
+        "id": item.id,
+        "product_id": product.id,
+        "name": product.name,
+        "price": str(product.price),
+        "quantity": item.quantity,
+        "stock": product.stock,
+        "is_available": product.is_available,
+        "is_out_of_stock": product.stock == 0,
+        "exceeds_stock": item.quantity > product.stock,
+        "image_url": product.images.first().image.url if product.images.exists() else None,
+    }
+
+
+def build_stock_validation_result(requested_items):
+    product_map = {
+        p.id: p for p in Product.objects.filter(id__in=[item["product_id"] for item in requested_items])
+    }
+    details = []
+    is_valid = True
+
+    for requested in requested_items:
+        product_id = requested["product_id"]
+        requested_qty = requested["quantity"]
+        product = product_map.get(product_id)
+
+        if not product:
+            is_valid = False
+            details.append({
+                "product_id": product_id,
+                "requested_quantity": requested_qty,
+                "available_quantity": 0,
+                "is_available": False,
+                "valid": False,
+                "reason": "Product not found",
+            })
+            continue
+
+        valid = requested_qty <= product.stock
+        if not valid:
+            is_valid = False
+
+        details.append({
+            "product_id": product.id,
+            "product_name": product.name,
+            "requested_quantity": requested_qty,
+            "available_quantity": product.stock,
+            "is_available": product.is_available,
+            "valid": valid,
+            "reason": None if valid else "Insufficient stock",
+        })
+
+    return {"valid": is_valid, "details": details}
 
 # ----------------------------
 # CATEGORY APIS
@@ -167,6 +228,7 @@ def list_products(request):
             "keywords": p.keywords,
             "price": str(p.price),
             "stock": p.stock,
+            "is_available": p.is_available,
             "category_id": p.category.id if p.category else None,
             "category_name": p.category.name if p.category else None,
             "images": [{"id": img.id, "url": img.image.url} for img in p.images.all()],
@@ -186,6 +248,7 @@ def product_details(request, product_id):
                 "keywords": p.keywords,
                 "price": str(p.price),
                 "stock": p.stock,
+                "is_available": p.is_available,
                 "category_id": p.category.id if p.category else None,
                 "images": [{"id": img.id, "url": img.image.url} for img in p.images.all()]
             }
@@ -327,12 +390,62 @@ def public_product_details(request, product_id):
             "keywords": p.keywords,
             "price": str(p.price),
             "stock": p.stock,
+            "is_available": p.is_available,
             "category_name": p.category.name if p.category else None,
             "images": [{"id": img.id, "url": img.image.url} for img in p.images.all()]
         }
         return JsonResponse(data, status=200)
     except Product.DoesNotExist:
         return JsonResponse({"error": "Not Found"}, status=404)
+
+
+@csrf_exempt
+def product_stock(request, product_id):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    try:
+        product = Product.objects.get(pk=product_id)
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Product not found"}, status=404)
+
+    return JsonResponse(
+        {
+            "product_id": product.id,
+            "stock_quantity": product.stock,
+            "is_available": product.is_available,
+        },
+        status=200,
+    )
+
+
+@csrf_exempt
+def validate_stock(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body"}, status=400)
+
+    payload_items = data.get("items", [])
+    if not isinstance(payload_items, list):
+        return JsonResponse({"error": "items must be an array"}, status=400)
+
+    requested_items = []
+    for raw_item in payload_items:
+        try:
+            product_id = int(raw_item.get("product_id"))
+            quantity = int(raw_item.get("quantity", 0))
+        except (TypeError, ValueError):
+            return JsonResponse({"error": "Each item must include numeric product_id and quantity"}, status=400)
+
+        if quantity < 1:
+            return JsonResponse({"error": "Quantity must be at least 1"}, status=400)
+
+        requested_items.append({"product_id": product_id, "quantity": quantity})
+
+    result = build_stock_validation_result(requested_items)
+    return JsonResponse(result, status=200 if result["valid"] else 409)
 
 @csrf_exempt
 def cart_ops(request):
@@ -344,16 +457,7 @@ def cart_ops(request):
     cart, _ = Cart.objects.get_or_create(user=user)
 
     if request.method == "GET":
-        items = []
-        for i in cart.items.all():
-            items.append({
-                "id": i.id,
-                "product_id": i.product.id,
-                "name": i.product.name,
-                "price": str(i.product.price),
-                "quantity": i.quantity,
-                "image_url": i.product.images.first().image.url if i.product.images.exists() else None
-            })
+        items = [serialize_cart_item(i) for i in cart.items.select_related("product")]
         return JsonResponse({"cart_id": cart.id, "items": items, "total": str(cart.total_price)}, status=200)
 
     elif request.method == "DELETE":
@@ -365,14 +469,26 @@ def cart_ops(request):
             data = json.loads(request.body)
             product_id = data.get('product_id')
             qty = int(data.get('quantity', 1))
+            if qty < 1:
+                return JsonResponse({"error": "Quantity must be at least 1"}, status=400)
             prod = Product.objects.get(pk=product_id)
+            if prod.stock <= 0:
+                return JsonResponse({"error": "Product is out of stock", "max_allowed": 0}, status=409)
             item, created = CartItem.objects.get_or_create(cart=cart, product=prod)
-            if not created:
-                item.quantity += qty
-            else:
-                item.quantity = qty
+            requested_total = qty if created else item.quantity + qty
+            adjusted_total = min(requested_total, prod.stock)
+            item.quantity = adjusted_total
             item.save()
-            return JsonResponse({"message": "Added to cart"}, status=200)
+            adjusted = adjusted_total != requested_total
+            return JsonResponse(
+                {
+                    "message": "Added to cart" if not adjusted else "Quantity adjusted to available stock",
+                    "adjusted": adjusted,
+                    "max_allowed": prod.stock,
+                    "quantity": item.quantity,
+                },
+                status=200,
+            )
         except Product.DoesNotExist:
             return JsonResponse({"error": "Product not found"}, status=404)
         except Exception as e:
@@ -397,11 +513,11 @@ def cart_sync(request):
             try:
                 prod = Product.objects.get(pk=local_item['product_id'])
                 qty = int(local_item.get('quantity', 1))
+                if qty < 1 or prod.stock <= 0:
+                    continue
                 db_item, created = CartItem.objects.get_or_create(cart=cart, product=prod)
-                if not created:
-                    db_item.quantity += qty
-                else:
-                    db_item.quantity = qty
+                requested_total = qty if created else db_item.quantity + qty
+                db_item.quantity = min(requested_total, prod.stock)
                 db_item.save()
             except Product.DoesNotExist:
                 continue
@@ -415,7 +531,6 @@ def cart_sync(request):
 # Returns only the authenticated user's past orders
 # Sorted by newest first
 
-from .models import Order, CustomUser
 import jwt
 from django.conf import settings
 
@@ -457,9 +572,6 @@ def user_order_history(request):
     return JsonResponse({"orders": data}, status=200)
 
 
-from django.db import transaction
-from .models import Order, OrderItem
-
 @csrf_exempt
 def checkout(request):
     if request.method != "POST":
@@ -494,6 +606,35 @@ def checkout(request):
 
     try:
         with transaction.atomic():
+            cart_items = list(
+                cart.items.select_related("product")
+                .select_for_update()
+                .order_by("id")
+            )
+
+            locked_products = {
+                p.id: p
+                for p in Product.objects.select_for_update()
+                .filter(id__in=[item.product_id for item in cart_items])
+            }
+
+            shortages = []
+            for item in cart_items:
+                product = locked_products.get(item.product_id)
+                if not product or item.quantity > product.stock:
+                    shortages.append({
+                        "product_id": item.product_id,
+                        "product_name": item.product.name,
+                        "requested_quantity": item.quantity,
+                        "available_quantity": product.stock if product else 0,
+                    })
+
+            if shortages:
+                return JsonResponse(
+                    {"error": INVENTORY_CHANGED_ERROR, "shortages": shortages},
+                    status=409,
+                )
+
             order = Order.objects.create(
                 user=user,
                 total_price=cart.total_price,
@@ -503,7 +644,12 @@ def checkout(request):
                 contact_phone=contact_phone,
                 status=Order.Status.PENDING,
             )
-            for item in cart.items.select_related('product'):
+
+            for item in cart_items:
+                product = locked_products[item.product_id]
+                product.stock = product.stock - item.quantity
+                product.save(update_fields=["stock", "is_available"])
+
                 OrderItem.objects.create(
                     order=order,
                     product=item.product,
@@ -511,6 +657,7 @@ def checkout(request):
                     product_price=item.product.price,
                     quantity=item.quantity,
                 )
+
             cart.items.all().delete()
         return JsonResponse({"order_id": order.id, "message": "Order placed successfully"}, status=201)
     except Exception as e:
@@ -537,9 +684,20 @@ def cart_item_ops(request, item_id):
             qty = int(data.get('quantity', 1))
             if qty < 1:
                 return JsonResponse({"error": "Quantity must be at least 1"}, status=400)
-            item.quantity = qty
+            if item.product.stock <= 0:
+                return JsonResponse({"error": "Product is out of stock", "max_allowed": 0}, status=409)
+            adjusted_qty = min(qty, item.product.stock)
+            item.quantity = adjusted_qty
             item.save()
-            return JsonResponse({"message": "Quantity updated"}, status=200)
+            return JsonResponse(
+                {
+                    "message": "Quantity updated" if adjusted_qty == qty else "Quantity adjusted to available stock",
+                    "adjusted": adjusted_qty != qty,
+                    "max_allowed": item.product.stock,
+                    "quantity": adjusted_qty,
+                },
+                status=200,
+            )
         except (ValueError, json.JSONDecodeError):
             return JsonResponse({"error": "Invalid data"}, status=400)
 

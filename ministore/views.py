@@ -107,7 +107,7 @@ def login_user(request):
         return JsonResponse({"error": "Invalid request body format."}, status=400)
 
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem
 from django.db import transaction
 
@@ -178,29 +178,64 @@ def build_stock_validation_result(requested_items):
 def list_categories(request):
     if request.method != "GET":
         return JsonResponse({"error": "Method not allowed"}, status=405)
-    cats = [{"id": c.id, "name": c.name, "description": c.description} for c in Category.objects.all()]
-    return JsonResponse({"categories": cats}, status=200)
+    cats = Category.objects.annotate(product_count=Count('products'))
+    result = []
+    for c in cats:
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "description": c.description,
+            "slug": c.slug,
+            "image_url": c.image.url if c.image else None,
+            "count": c.product_count,
+        })
+    return JsonResponse({"categories": result}, status=200)
 
 @csrf_exempt
 def admin_add_category(request):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
     try:
-        data = json.loads(request.body)
-        c = Category.objects.create(name=data['name'], description=data.get('description', ''))
-        return JsonResponse({"id": c.id, "name": c.name, "description": c.description}, status=201)
+        name = request.POST.get('name', '')
+        description = request.POST.get('description', '')
+        if not name:
+            return JsonResponse({"error": "Category name is required"}, status=400)
+        c = Category(name=name, description=description)
+        if 'image' in request.FILES:
+            img = request.FILES['image']
+            if img.size > 6*1024*1024:
+                return JsonResponse({"error": "Image exceeds 6MB limit"}, status=400)
+            c.image = img
+        c.save()
+        return JsonResponse({"id": c.id, "name": c.name, "description": c.description, "image_url": c.image.url if c.image else None}, status=201)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
 
 @csrf_exempt
 def admin_delete_category(request, category_id):
-    if request.method != "DELETE":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
     try:
-        Category.objects.get(pk=category_id).delete()
-        return JsonResponse({"message": "Category deleted"}, status=200)
+        cat = Category.objects.get(pk=category_id)
     except Category.DoesNotExist:
         return JsonResponse({"error": "Category not found"}, status=404)
+
+    if request.method == "DELETE":
+        cat.delete()
+        return JsonResponse({"message": "Category deleted"}, status=200)
+
+    elif request.method == "PUT" or request.method == "POST":
+        name = request.POST.get('name', cat.name)
+        description = request.POST.get('description', cat.description)
+        cat.name = name
+        cat.description = description
+        if 'image' in request.FILES:
+            img = request.FILES['image']
+            if img.size > 6*1024*1024:
+                return JsonResponse({"error": "Image exceeds 6MB limit"}, status=400)
+            cat.image = img
+        cat.save()
+        return JsonResponse({"id": cat.id, "name": cat.name, "description": cat.description, "image_url": cat.image.url if cat.image else None}, status=200)
+
+    return JsonResponse({"error": "Method not allowed"}, status=405)
 
 # ----------------------------
 # PRODUCT APIS (CRUD)

@@ -15,6 +15,8 @@ urlpatterns = [
     # Public Lookups
     path("api/products/", views.list_products, name="list_products"),
     path("api/products/<int:product_id>/", views.public_product_details, name="public_product_details"),
+    path("api/products/<int:product_id>/stock/", views.product_stock, name="product_stock"),
+    path("api/products/validate-stock/", views.validate_stock, name="validate_stock"),
     path("api/categories/", views.list_categories, name="list_categories"),
     
     # Authenticated Shopping APIs

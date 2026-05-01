@@ -1,12 +1,10 @@
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
-from django.db.models.signals import pre_save, post_delete
+from django.db.models.signals import pre_delete, pre_save, post_delete
 from django.dispatch import receiver
 from django.core.files.storage import default_storage
-from django.core.files.storage import default_storage
-import time
 import uuid
 
 class CustomUserManager(BaseUserManager):
@@ -81,6 +79,7 @@ class Product(models.Model):
         validators=[MinValueValidator(0)],
     )
     stock = models.PositiveIntegerField(default=0)
+    is_available = models.BooleanField(default=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
@@ -101,6 +100,11 @@ class Product(models.Model):
     @property
     def in_stock(self):
         return self.stock > 0
+
+    def save(self, *args, **kwargs):
+        # Keep availability in sync with stock for source-of-truth consistency.
+        self.is_available = self.stock > 0
+        super().save(*args, **kwargs)
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
@@ -203,6 +207,29 @@ class OrderItem(models.Model):
     def line_total(self):
         return self.product_price * self.quantity
 
+
+def _adjust_inventory_for_order(order, *, increment):
+    """
+    Increment/decrement inventory for all order items atomically.
+    Called by order status transitions and delete hooks.
+    """
+    if not order.pk:
+        return
+
+    with transaction.atomic():
+        for item in order.items.select_related("product"):
+            if not item.product_id:
+                continue
+
+            product = Product.objects.select_for_update().get(pk=item.product_id)
+            if increment:
+                product.stock = product.stock + item.quantity
+            else:
+                product.stock = product.stock - item.quantity
+            if product.stock < 0:
+                raise ValueError(f"Negative stock adjustment prevented for product {product.id}")
+            product.save(update_fields=["stock", "is_available"])
+
 # Disk File Cleanup Hooks
 # Disk File Cleanup Hooks mapped to ProductImage explicitly
 @receiver(post_delete, sender=ProductImage)
@@ -222,3 +249,24 @@ def auto_delete_file_on_change(sender, instance, **kwargs):
     new_file = instance.image
     if not old_file == new_file and old_file and default_storage.exists(old_file.name):
         default_storage.delete(old_file.name)
+
+
+@receiver(pre_save, sender=Order)
+def handle_order_status_inventory_transitions(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+
+    previous = Order.objects.filter(pk=instance.pk).values_list("status", flat=True).first()
+    if previous == instance.status:
+        return
+
+    if previous != Order.Status.CANCELLED and instance.status == Order.Status.CANCELLED:
+        _adjust_inventory_for_order(instance, increment=True)
+    elif previous == Order.Status.CANCELLED and instance.status != Order.Status.CANCELLED:
+        _adjust_inventory_for_order(instance, increment=False)
+
+
+@receiver(pre_delete, sender=Order)
+def restock_on_order_delete(sender, instance, **kwargs):
+    if instance.status != Order.Status.CANCELLED:
+        _adjust_inventory_for_order(instance, increment=True)

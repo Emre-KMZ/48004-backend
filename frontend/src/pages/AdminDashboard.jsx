@@ -33,6 +33,13 @@ export default function AdminDashboard() {
 
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  };
 
   useEffect(() => {
     if (auth.role !== 'Admin') {
@@ -69,7 +76,8 @@ export default function AdminDashboard() {
       await api.post('/api/admin/categories/', { name: catName });
       setCatName('');
       fetchData();
-    } catch(e) { alert("Failed to add category"); }
+      showToast("Category added successfully");
+    } catch(e) { showToast("Failed to add category", "error"); }
   }
   
   const handleDeleteCategory = async (id) => {
@@ -77,7 +85,8 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/admin/categories/${id}/`);
       fetchData();
-    } catch(e) { alert("Failed to delete category"); }
+      showToast("Category deleted");
+    } catch(e) { showToast("Failed to delete category", "error"); }
   }
 
   // --- PRODUCT LOGIC ---
@@ -114,7 +123,8 @@ export default function AdminDashboard() {
       }
       closeProductModal();
       fetchData();
-    } catch(e) { alert(e.response?.data?.error || "Error saving product. Check constraints."); }
+      showToast(editProduct ? "Product updated successfully" : "Product created successfully");
+    } catch(e) { showToast(e.response?.data?.error || "Error saving product. Check constraints.", "error"); }
   }
 
   const handleDeleteProduct = async (id) => {
@@ -122,7 +132,8 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/admin/products/${id}/`);
       fetchData();
-    } catch(e) { alert("Failed to delete"); }
+      showToast("Product deleted");
+    } catch(e) { showToast("Failed to delete product", "error"); }
   }
 
   const openEditModal = (p) => {
@@ -155,7 +166,8 @@ export default function AdminDashboard() {
       // Auto-update modal preview
       const updated = await api.get(`/api/admin/products/${editProduct.id}/`);
       setEditProduct(updated.data);
-    } catch(err) { alert(err.response?.data?.error || "Error appending file"); }
+      showToast("Image uploaded");
+    } catch(err) { showToast(err.response?.data?.error || "Error appending file", "error"); }
   }
 
   const handleSpecificImageDelete = async (img_id) => {
@@ -165,7 +177,8 @@ export default function AdminDashboard() {
       fetchData();
       const updated = await api.get(`/api/admin/products/${editProduct.id}/`);
       setEditProduct(updated.data);
-    } catch(err) { alert("Failed to trash image."); }
+      showToast("Image deleted");
+    } catch(err) { showToast("Failed to delete image", "error"); }
   }
 
   // --- DRAG AND DROP METHODS ---
@@ -357,27 +370,32 @@ export default function AdminDashboard() {
               </tr>
             </thead>
             <tbody>
-              {filteredProducts.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #eee', background: p.stock === 0 ? '#FFF5F5' : 'transparent' }}>
+              {filteredProducts.map(p => {
+                const isOOS = p.stock === 0;
+                const isLowStock = p.stock > 0 && p.stock < 5;
+                const isWarning = p.stock < 5;
+                return (
+                <tr key={p.id} style={{ borderBottom: '1px solid #eee', background: isWarning ? '#FFF5F5' : 'transparent' }}>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <img src={p.images && p.images.length > 0 ? `${BACKEND_URL}${p.images[0].url}` : FALLBACK} alt="thumb" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}/>
-                      {p.stock === 0 && <AlertTriangle size={14} color="#D32F2F" style={{ position: 'absolute', top: '-4px', right: '-4px' }} />}
+                      {isWarning && <AlertTriangle size={14} color="#D32F2F" style={{ position: 'absolute', top: '-4px', right: '-4px' }} />}
                     </div>
                   </td>
                   <td style={{ fontWeight: '600', color: '#333' }}>
                     {p.name}
-                    {p.stock === 0 && <span style={{ marginLeft: '8px', fontSize: '0.7rem', background: '#FFEBEE', color: '#D32F2F', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', verticalAlign: 'middle' }}>OUT OF STOCK</span>}
+                    {isOOS && <span style={{ marginLeft: '8px', fontSize: '0.7rem', background: '#FFEBEE', color: '#D32F2F', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', verticalAlign: 'middle' }}>OUT OF STOCK</span>}
+                    {isLowStock && <span style={{ marginLeft: '8px', fontSize: '0.7rem', background: '#FFF3E0', color: '#E65100', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', verticalAlign: 'middle' }}>LOW STOCK</span>}
                   </td>
                   <td style={{ color: '#666' }}>{p.category_name}</td>
                   <td style={{ color: '#333', fontWeight: '700' }}>${p.price}</td>
-                  <td style={{ fontWeight: '600', color: p.stock > 0 ? '#333' : '#D32F2F' }}>{p.stock}</td>
+                  <td style={{ fontWeight: '600', color: isWarning ? '#D32F2F' : '#333' }}>{p.stock}</td>
                   <td>
                     <button onClick={()=>openEditModal(p)} style={{ marginRight: '0.5rem', cursor: 'pointer', padding: '0.4rem 0.8rem', background: '#eee', color: '#333', border: 'none', borderRadius: '8px', fontWeight: '600', fontFamily: 'Outfit' }}>Edit</button>
                     <button onClick={()=>handleDeleteProduct(p.id)} style={{ color: '#D32F2F', background: '#FFEBEE', border: 'none', borderRadius: '8px', cursor: 'pointer', padding: '0.4rem 0.8rem', fontWeight: '600', fontFamily: 'Outfit' }}>Delete</button>
                   </td>
                 </tr>
-              ))}
+              )})}
               {filteredProducts.length===0 && <tr><td colSpan="6" style={{textAlign:'center', padding: '2rem', color: '#888'}}>No products found.</td></tr>}
             </tbody>
           </table>
@@ -469,6 +487,26 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* --- TOAST NOTIFICATIONS --- */}
+      <div style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 2000, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{
+            padding: '0.8rem 1.2rem',
+            borderRadius: '8px',
+            color: 'white',
+            fontWeight: '600',
+            fontFamily: 'Outfit',
+            fontSize: '0.9rem',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            background: t.type === 'success' ? '#2e7d32' : '#D32F2F',
+            animation: 'fadeIn 0.3s ease',
+            minWidth: '220px',
+          }}>
+            {t.message}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

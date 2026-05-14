@@ -43,7 +43,10 @@ export default function AdminDashboard() {
 
   const [orders, setOrders] = useState([]);
   const [orderStatusFilter, setOrderStatusFilter] = useState('All');
-  
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+
   useEffect(() => {
     if (auth.role !== 'Admin') {
       navigate('/');
@@ -240,6 +243,41 @@ export default function AdminDashboard() {
 
   const formatNumber = (value) => {
     return Number(value || 0).toLocaleString('en-US');
+  };
+
+  const openOrderModal = (order) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+    setStatusMessage("");
+  };
+
+  const closeOrderModal = () => {
+    setSelectedOrder(null);
+    setShowOrderModal(false);
+    setStatusMessage("");
+  };
+
+  const handleOrderStatusChange = async (orderId, newStatus) => {
+    try {
+      await api.patch(`/api/admin/orders/${orderId}/`, {
+        status: newStatus,
+      });
+
+      setStatusMessage("Status updated successfully.");
+
+      setSelectedOrder((prev) => ({
+        ...prev,
+        status: newStatus,
+      }));
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+    } catch (err) {
+      setStatusMessage(err.response?.data?.error || "Failed to update status.");
+    }
   };
 
   const filteredOrders =
@@ -446,11 +484,11 @@ export default function AdminDashboard() {
               }}
             >
               <option value="All">All statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Processing">Processing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Cancelled">Cancelled</option>
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
 
@@ -462,6 +500,7 @@ export default function AdminDashboard() {
                 <th>Total Amount</th>
                 <th>Status</th>
                 <th>Order Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -473,12 +512,29 @@ export default function AdminDashboard() {
                   <td>${Number(order.total_price).toFixed(2)}</td>
                   <td>{order.status}</td>
                   <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      onClick={() => openOrderModal(order)}
+                      style={{
+                        padding: '0.4rem 0.8rem',
+                        background: '#eee',
+                        color: '#333',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        fontFamily: 'Outfit'
+                      }}
+                    >
+                      View
+                    </button>
+                  </td>
                 </tr>
               ))}
 
               {filteredOrders.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
+                  <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
                     No orders found.
                   </td>
                 </tr>
@@ -489,6 +545,163 @@ export default function AdminDashboard() {
       )}
 
       {/* --- MODAL OVERLAY --- */}
+      {showOrderModal && selectedOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: '#fff',
+            padding: '2rem',
+            borderRadius: '16px',
+            width: '90%',
+            maxWidth: '750px',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid #eee',
+              paddingBottom: '1rem',
+              marginBottom: '1rem'
+            }}>
+              <h2 style={{ margin: 0 }}>
+                Packing Slip - Order #{selectedOrder.id}
+              </h2>
+
+              <button
+                onClick={closeOrderModal}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3>Customer & Shipping</h3>
+
+              <p>
+                <strong>Customer:</strong> {selectedOrder.customer_name}
+              </p>
+
+              <p>
+                <strong>Shipping Address:</strong>
+              </p>
+
+              <div style={{
+                background: '#f8f8f8',
+                padding: '1rem',
+                borderRadius: '12px'
+              }}>
+                {selectedOrder.shipping_address || 'No shipping address available.'}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h3>Items to Pack</h3>
+
+              <table style={{
+                width: '100%',
+                borderCollapse: 'collapse'
+              }}>
+                <thead>
+                  <tr style={{ background: '#f4f4f4' }}>
+                    <th style={{ padding: '0.8rem', textAlign: 'left' }}>Product</th>
+                    <th style={{ textAlign: 'left' }}>Quantity</th>
+                    <th style={{ textAlign: 'left' }}>Price</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {selectedOrder.items?.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '0.8rem' }}>
+                        {item.product_name}
+                      </td>
+
+                      <td>{item.quantity}</td>
+
+                      <td>
+                        ${Number(item.product_price || 0).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderTop: '1px solid #eee',
+              paddingTop: '1rem'
+            }}>
+              <div>
+                <h3 style={{ marginTop: 0 }}>Update Status</h3>
+
+                <select
+                  value={selectedOrder.status}
+                  onChange={(e) =>
+                    handleOrderStatusChange(
+                      selectedOrder.id,
+                      e.target.value
+                    )
+                  }
+                  style={{
+                    padding: '0.7rem',
+                    borderRadius: '12px',
+                    border: '2px solid #eee',
+                    fontFamily: 'Outfit'
+                  }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+
+                {statusMessage && (
+                  <p style={{
+                    marginTop: '0.5rem',
+                    color: statusMessage.includes('success')
+                      ? '#2E7D32'
+                      : '#D32F2F'
+                  }}>
+                    {statusMessage}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ margin: 0, color: '#777' }}>Total</p>
+
+                <h2 style={{ margin: 0 }}>
+                  ${Number(selectedOrder.total_price).toFixed(2)}
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showProductModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', padding: '2rem', borderRadius: '8px', width: '90%', maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto' }}>

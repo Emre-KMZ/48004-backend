@@ -118,6 +118,7 @@ export default function App() {
             {/* Protected Routes (Admin Only) */}
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/:section" element={<AdminDashboard />} />
             </Route>
             
           </Routes>

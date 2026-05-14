@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { DollarSign, ShoppingCart, Users, AlertTriangle } from "lucide-react";
 
@@ -10,7 +10,8 @@ const FALLBACK = 'https://placehold.co/150x150?text=No+Img';
 export default function AdminDashboard() {
   const { auth } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('products');
+  const { section } = useParams();
+  const [activeTab, setActiveTab] = useState(section || 'dashboard');
   
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -54,6 +55,12 @@ export default function AdminDashboard() {
       fetchData();
     }
   }, [auth]);
+
+  useEffect(() => {
+    if (section) {
+      setActiveTab(section);
+    }
+  }, [section]);
 
   const fetchData = async () => {
     try {
@@ -348,10 +355,22 @@ export default function AdminDashboard() {
         borderRadius: '16px',
         alignItems: 'center'
       }}>
-        <button onClick={()=>setActiveTab('products')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='products'?'#333':'#f4f4f4', color: activeTab==='products'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='products'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Products Inventory</button>
-        <button onClick={()=>setActiveTab('categories')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='categories'?'#333':'#f4f4f4', color: activeTab==='categories'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='categories'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Category Management</button>
+        <button onClick={() => navigate('/admin/inventory')} 
+        style={{
+          padding: '0.6rem 1.2rem',
+          background: (activeTab==='products' || activeTab==='inventory' || activeTab==='stock') ? '#333' : '#f4f4f4',
+          color: (activeTab==='products' || activeTab==='inventory' || activeTab==='stock') ? 'white' : '#555',
+          border: 'none',
+          borderRadius: '25px',
+          cursor: 'pointer',
+          fontFamily: 'Outfit',
+          fontWeight: '600',
+          transition: 'all 0.2s',
+          boxShadow: (activeTab==='products' || activeTab==='inventory' || activeTab==='stock') ? '0 4px 6px rgba(0,0,0,0.1)' : 'none'
+        }}>Products Inventory</button>
+        <button onClick={() => navigate('/admin/categories')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='categories'?'#333':'#f4f4f4', color: activeTab==='categories'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='categories'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Category Management</button>
         <button
-          onClick={() => setActiveTab('orders')}
+          onClick={() => navigate('/admin/orders')}
           style={{
             padding: '0.6rem 1.2rem',
             background: activeTab === 'orders' ? '#333' : '#f4f4f4',
@@ -457,7 +476,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {activeTab === 'products' && (
+      {(activeTab === 'products' || activeTab === 'inventory' || activeTab === 'stock') && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
             <h2 style={{ color: '#444', fontWeight: '600' }}>Product Catalog</h2>

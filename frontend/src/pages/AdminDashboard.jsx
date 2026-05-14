@@ -32,6 +32,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [orders, setOrders] = useState([]);
+  const [orderStatusFilter, setOrderStatusFilter] = useState('All');
+  
   useEffect(() => {
     if (auth.role !== 'Admin') {
       navigate('/');
@@ -43,6 +46,9 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     try {
     setStatsLoading(true);
+
+      const ordersRes = await api.get('/api/admin/orders/');
+      setOrders(ordersRes.data);
 
       const catRes = await api.get('/api/categories/');
       setCategories(catRes.data.categories);
@@ -216,6 +222,11 @@ export default function AdminDashboard() {
     return Number(value || 0).toLocaleString('en-US');
   };
 
+  const filteredOrders =
+    orderStatusFilter === 'All'
+    ? orders
+    : orders.filter(order => order.status === orderStatusFilter);
+
   function StatCard({ title, value, icon }) {
     return (
       <div style={{
@@ -263,6 +274,23 @@ export default function AdminDashboard() {
       <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #eee', paddingBottom: '1rem', marginBottom: '2rem' }}>
         <button onClick={()=>setActiveTab('products')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='products'?'#333':'#f4f4f4', color: activeTab==='products'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='products'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Products Inventory</button>
         <button onClick={()=>setActiveTab('categories')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='categories'?'#333':'#f4f4f4', color: activeTab==='categories'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='categories'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Category Management</button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          style={{
+            padding: '0.6rem 1.2rem',
+            background: activeTab === 'orders' ? '#333' : '#f4f4f4',
+            color: activeTab === 'orders' ? 'white' : '#555',
+            border: 'none',
+            borderRadius: '25px',
+            cursor: 'pointer',
+            fontFamily: 'Outfit',
+            fontWeight: '600',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'orders' ? '0 4px 6px rgba(0,0,0,0.1)' : 'none'
+          }}
+        >
+          Order Management
+        </button>
       </div>
 
       <div style={{
@@ -356,6 +384,64 @@ export default function AdminDashboard() {
                 </tr>
               ))}
               {filteredProducts.length===0 && <tr><td colSpan="6" style={{textAlign:'center', padding: '2rem', color: '#888'}}>No products found.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {activeTab === 'orders' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center' }}>
+            <h2 style={{ color: '#444', fontWeight: '600' }}>Order Management</h2>
+
+            <select
+              value={orderStatusFilter}
+              onChange={(e) => setOrderStatusFilter(e.target.value)}
+              style={{
+                padding: '0.7rem',
+                borderRadius: '12px',
+                border: '2px solid #eee',
+                fontFamily: 'Outfit'
+              }}
+            >
+              <option value="All">All statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+            <thead>
+              <tr style={{ background: '#f4f4f4', color: '#555' }}>
+                <th style={{ padding: '1rem' }}>Order ID</th>
+                <th>Customer</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Order Date</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredOrders.map(order => (
+                <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: '1rem', fontWeight: '600' }}>#{order.id}</td>
+                  <td>{order.customer_name}</td>
+                  <td>${Number(order.total_price).toFixed(2)}</td>
+                  <td>{order.status}</td>
+                  <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+
+              {filteredOrders.length === 0 && (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
+                    No orders found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

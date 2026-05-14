@@ -285,6 +285,11 @@ export default function AdminDashboard() {
     ? orders
     : orders.filter(order => order.status === orderStatusFilter);
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    navigate('/login');
+  };
   function StatCard({ title, value, icon }) {
     return (
       <div style={{
@@ -333,7 +338,16 @@ export default function AdminDashboard() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Outfit' }}>
       <h1 style={{ color: '#333', fontSize: '2.5rem', fontWeight: '700', marginBottom: '1rem' }}>Admin System</h1>
-      <div style={{ display: 'flex', gap: '1rem', borderBottom: '2px solid #eee', paddingBottom: '1rem', marginBottom: '2rem' }}>
+      <div style={{
+        display: 'flex',
+        gap: '1rem',
+        borderBottom: '2px solid #1f2937',
+        padding: '1rem',
+        marginBottom: '2rem',
+        background: '#1f2937',
+        borderRadius: '16px',
+        alignItems: 'center'
+      }}>
         <button onClick={()=>setActiveTab('products')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='products'?'#333':'#f4f4f4', color: activeTab==='products'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='products'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Products Inventory</button>
         <button onClick={()=>setActiveTab('categories')} style={{ padding: '0.6rem 1.2rem', background: activeTab==='categories'?'#333':'#f4f4f4', color: activeTab==='categories'?'white':'#555', border: 'none', borderRadius: '25px', cursor: 'pointer', fontFamily: 'Outfit', fontWeight: '600', transition: 'all 0.2s', boxShadow: activeTab==='categories'?'0 4px 6px rgba(0,0,0,0.1)':'none' }}>Category Management</button>
         <button
@@ -353,6 +367,39 @@ export default function AdminDashboard() {
         >
           Order Management
         </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem' }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              padding: '0.6rem 1rem',
+              background: '#fff',
+              color: '#333',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontFamily: 'Outfit',
+              fontWeight: '600'
+            }}
+          >
+            Back to Store
+          </button>
+
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '0.6rem 1rem',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              fontFamily: 'Outfit',
+              fontWeight: '600'
+            }}
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div style={{

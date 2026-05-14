@@ -219,6 +219,24 @@ class OrderItem(models.Model):
     @property
     def line_total(self):
         return self.product_price * self.quantity
+    
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    old_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"Order #{self.order.id}: {self.old_status} → {self.new_status}"
 
 
 def _adjust_inventory_for_order(order, *, increment):

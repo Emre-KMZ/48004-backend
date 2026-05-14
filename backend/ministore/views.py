@@ -108,7 +108,7 @@ def login_user(request):
 
 
 from django.db.models import Q, Count
-from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem
+from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem, OrderStatusHistory
 from django.db import transaction
 
 
@@ -1017,8 +1017,17 @@ def admin_order_status_update(request, order_id):
             "error": f"Invalid status transition from {current_status} to {new_status}"
         }, status=400)
 
+    old_status = order.status
+
     order.status = new_status
     order.save(update_fields=["status", "updated_at"])
+
+    OrderStatusHistory.objects.create(
+        order=order,
+        changed_by=admin_user,
+        old_status=old_status,
+        new_status=new_status,
+    )
 
     return JsonResponse({
         "message": "Order status updated successfully",

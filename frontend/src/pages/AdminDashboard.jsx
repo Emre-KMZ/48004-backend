@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { DollarSign, ShoppingCart, Users } from "lucide-react";
+import { DollarSign, ShoppingCart, Users, AlertTriangle } from "lucide-react";
 
 const BACKEND_URL = 'http://localhost:8000';
 const FALLBACK = 'https://placehold.co/150x150?text=No+Img';
@@ -15,6 +15,8 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [formErrors, setFormErrors] = useState({});
   
   // Modals & Forms
   const [showProductModal, setShowProductModal] = useState(false);
@@ -81,6 +83,12 @@ export default function AdminDashboard() {
   // --- PRODUCT LOGIC ---
   const handleProductSubmit = async (e) => {
     e.preventDefault();
+    const errors = {};
+    if (parseFloat(prodForm.price) < 0.01) errors.price = 'Price must be at least 0.01';
+    if (parseInt(prodForm.stock) < 0) errors.stock = 'Stock cannot be negative';
+    if (Object.keys(errors).length > 0) { setFormErrors(errors); return; }
+    setFormErrors({});
+
     const formData = new FormData();
     formData.append('name', prodForm.name);
     formData.append('description', prodForm.description);
@@ -88,7 +96,7 @@ export default function AdminDashboard() {
     formData.append('price', prodForm.price);
     formData.append('stock', prodForm.stock);
     formData.append('category_id', prodForm.category_id);
-    
+
     // In creation mode, append all selected files dynamically in exact array order
     if (!editProduct) {
         for (let i = 0; i < selectedFiles.length; i++) {
@@ -98,10 +106,8 @@ export default function AdminDashboard() {
 
     try {
       if (editProduct) {
-        // Update text parameters
-        await api.put(`/api/admin/products/${editProduct.id}/`, prodForm);
+        await api.patch(`/api/admin/products/${editProduct.id}/`, prodForm);
       } else {
-        // Create brand new product with images
         await api.post('/api/admin/products/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
@@ -133,6 +139,7 @@ export default function AdminDashboard() {
     setEditProduct(null);
     setProdForm({ name: '', description: '', keywords: '', price: '', stock: '', category_id: '' });
     setSelectedFiles([]);
+    setFormErrors({});
   }
 
   // --- GALLERY UPDATING LOGIC ---
@@ -253,7 +260,11 @@ export default function AdminDashboard() {
   }
 
   // --- RENDERERS ---
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.keywords.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.keywords.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !categoryFilter || String(p.category_id) === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   if (auth.role !== 'Admin') return null;
 
@@ -326,7 +337,13 @@ export default function AdminDashboard() {
             <h2 style={{ color: '#444', fontWeight: '600' }}>Product Catalog</h2>
             <button onClick={()=>setShowProductModal(true)} style={{ padding: '0.8rem 1.5rem', background: '#333', color: 'white', border:'none', borderRadius: '25px', cursor: 'pointer', fontWeight: '600', fontFamily: 'Outfit', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>+ Create Product</button>
           </div>
-          <input type="text" placeholder="Search products by name or keyword..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} style={{ padding: '0.8rem', width: '100%', marginBottom: '1.5rem', border: '2px solid #eee', borderRadius: '12px', fontFamily: 'Outfit', outlineColor: '#333', boxSizing: 'border-box' }}/>
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+            <input type="text" placeholder="Search products by name or keyword..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} style={{ padding: '0.8rem', flex: 1, border: '2px solid #eee', borderRadius: '12px', fontFamily: 'Outfit', outlineColor: '#333', boxSizing: 'border-box' }}/>
+            <select value={categoryFilter} onChange={e=>setCategoryFilter(e.target.value)} style={{ padding: '0.8rem', border: '2px solid #eee', borderRadius: '12px', fontFamily: 'Outfit', outlineColor: '#333', minWidth: '180px', background: 'white' }}>
+              <option value="">All Categories</option>
+              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
           
           <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', background: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
             <thead>
@@ -341,11 +358,17 @@ export default function AdminDashboard() {
             </thead>
             <tbody>
               {filteredProducts.map(p => (
-                <tr key={p.id} style={{ borderBottom: '1px solid #eee' }}>
+                <tr key={p.id} style={{ borderBottom: '1px solid #eee', background: p.stock === 0 ? '#FFF5F5' : 'transparent' }}>
                   <td style={{ padding: '1rem' }}>
-                    <img src={p.images && p.images.length > 0 ? `${BACKEND_URL}${p.images[0].url}` : FALLBACK} alt="thumb" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}/>
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={p.images && p.images.length > 0 ? `${BACKEND_URL}${p.images[0].url}` : FALLBACK} alt="thumb" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}/>
+                      {p.stock === 0 && <AlertTriangle size={14} color="#D32F2F" style={{ position: 'absolute', top: '-4px', right: '-4px' }} />}
+                    </div>
                   </td>
-                  <td style={{ fontWeight: '600', color: '#333' }}>{p.name}</td>
+                  <td style={{ fontWeight: '600', color: '#333' }}>
+                    {p.name}
+                    {p.stock === 0 && <span style={{ marginLeft: '8px', fontSize: '0.7rem', background: '#FFEBEE', color: '#D32F2F', padding: '2px 6px', borderRadius: '4px', fontWeight: '700', verticalAlign: 'middle' }}>OUT OF STOCK</span>}
+                  </td>
                   <td style={{ color: '#666' }}>{p.category_name}</td>
                   <td style={{ color: '#333', fontWeight: '700' }}>${p.price}</td>
                   <td style={{ fontWeight: '600', color: p.stock > 0 ? '#333' : '#D32F2F' }}>{p.stock}</td>
@@ -378,8 +401,14 @@ export default function AdminDashboard() {
                 <label>Keywords (tags) <input type="text" value={prodForm.keywords} onChange={e=>setProdForm({...prodForm, keywords: e.target.value})} style={{width:'100%', padding:'0.5rem'}}/></label>
                 
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <label style={{ flex: 1 }}>Price ($) <input required type="number" step="0.01" min="0.01" value={prodForm.price} onChange={e=>setProdForm({...prodForm, price: e.target.value})} style={{width:'100%', padding:'0.5rem'}}/></label>
-                  <label style={{ flex: 1 }}>Stock <input required type="number" min="0" value={prodForm.stock} onChange={e=>setProdForm({...prodForm, stock: e.target.value})} style={{width:'100%', padding:'0.5rem'}}/></label>
+                  <label style={{ flex: 1 }}>Price ($)
+                    <input required type="number" step="0.01" min="0.01" value={prodForm.price} onChange={e=>setProdForm({...prodForm, price: e.target.value})} style={{width:'100%', padding:'0.5rem', borderColor: formErrors.price ? '#D32F2F' : undefined}}/>
+                    {formErrors.price && <span style={{ color: '#D32F2F', fontSize: '0.75rem' }}>{formErrors.price}</span>}
+                  </label>
+                  <label style={{ flex: 1 }}>Stock
+                    <input required type="number" min="0" value={prodForm.stock} onChange={e=>setProdForm({...prodForm, stock: e.target.value})} style={{width:'100%', padding:'0.5rem', borderColor: formErrors.stock ? '#D32F2F' : undefined}}/>
+                    {formErrors.stock && <span style={{ color: '#D32F2F', fontSize: '0.75rem' }}>{formErrors.stock}</span>}
+                  </label>
                 </div>
                 
                 <label>Category

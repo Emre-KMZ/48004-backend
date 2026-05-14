@@ -40,6 +40,9 @@ urlpatterns = [
     path("api/admin/stats/summary/", views.admin_stats_summary, name="admin_stats_summary"),
     path("api/admin/stats/graph-data/", views.admin_stats_graph_data, name="admin_stats_graph_data"),
     path("api/admin/stats/insights/", views.admin_stats_insights, name="admin_stats_insights"),
+
+    path("api/admin/orders/<int:order_id>/", views.admin_order_status_update, name="admin_order_status_update"),
+
 ]
 
 if settings.DEBUG:

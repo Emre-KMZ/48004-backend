@@ -962,3 +962,67 @@ def admin_stats_insights(request):
         "top_selling_products": list(top_selling_products),
         "low_stock_products": list(low_stock_products),
     }, status=200)
+
+@csrf_exempt
+def admin_order_status_update(request, order_id):
+    if request.method != "PATCH":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    try:
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return JsonResponse({"error": "Order not found"}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body"}, status=400)
+
+    new_status = data.get("status")
+
+    valid_statuses = [
+        Order.Status.PENDING,
+        Order.Status.PROCESSING,
+        Order.Status.SHIPPED,
+        Order.Status.DELIVERED,
+        Order.Status.CANCELLED,
+    ]
+
+    allowed_transitions = {
+        Order.Status.PENDING: [Order.Status.PROCESSING, Order.Status.CANCELLED],
+        Order.Status.PROCESSING: [Order.Status.SHIPPED, Order.Status.CANCELLED],
+        Order.Status.SHIPPED: [Order.Status.DELIVERED],
+        Order.Status.DELIVERED: [],
+        Order.Status.CANCELLED: [],
+    }
+
+    if new_status not in valid_statuses:
+        return JsonResponse({"error": "Invalid status"}, status=400)
+
+    current_status = order.status
+
+    if new_status == current_status:
+        return JsonResponse({
+            "message": "Order already has this status",
+            "order_id": order.id,
+            "status": order.status,
+        }, status=200)
+
+    if new_status not in allowed_transitions.get(current_status, []):
+        return JsonResponse({
+            "error": f"Invalid status transition from {current_status} to {new_status}"
+        }, status=400)
+
+    order.status = new_status
+    order.save(update_fields=["status", "updated_at"])
+
+    return JsonResponse({
+        "message": "Order status updated successfully",
+        "order_id": order.id,
+        "status": order.status,
+        "updated_at": order.updated_at,
+    }, status=200)

@@ -1035,3 +1035,36 @@ def admin_order_status_update(request, order_id):
         "status": order.status,
         "updated_at": order.updated_at,
     }, status=200)
+
+from django.core.cache import cache
+
+@csrf_exempt
+def verify_admin(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    ip = request.META.get("REMOTE_ADDR", "unknown")
+    cache_key = f"verify_admin_attempts:{ip}"
+    attempts = cache.get(cache_key, 0)
+
+    if attempts >= 20:
+        return JsonResponse({"error": "Too many requests"}, status=429)
+
+    cache.set(cache_key, attempts + 1, timeout=60)
+
+    user = get_authenticated_user(request)
+
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    if not (user.is_staff or user.is_superuser or user.role == "Admin"):
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    return JsonResponse({
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role,
+        "is_staff": user.is_staff,
+        "is_superuser": user.is_superuser,
+    }, status=200)

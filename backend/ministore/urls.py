@@ -12,6 +12,8 @@ urlpatterns = [
     path("api/register/", views.register_customer, name="register_customer"),
     path("api/login/", views.login_user, name="login_user"),
     
+    path("api/auth/verify-admin/", views.verify_admin, name="verify_admin"),
+
     # Public Lookups
     path("api/products/", views.list_products, name="list_products"),
     path("api/products/<int:product_id>/", views.public_product_details, name="public_product_details"),

@@ -291,35 +291,35 @@ def product_details(request, product_id):
         except Product.DoesNotExist:
             return JsonResponse({"error": "Not Found"}, status=404)
 
-    elif request.method == "PUT":
+    elif request.method in ("PUT", "PATCH"):
         try:
             p = Product.objects.get(pk=product_id)
         except Product.DoesNotExist:
             return JsonResponse({"error": "Not Found"}, status=404)
-            
+
         try:
             data = json.loads(request.body)
             price = float(data.get('price', p.price))
             stock = int(data.get('stock', p.stock))
-            
+
             if price < 0.01: return JsonResponse({"error": "Price must be >= 0.01"}, status=400)
             if stock < 0: return JsonResponse({"error": "Stock cannot be negative"}, status=400)
-            
+
             p.name = data.get('name', p.name)
             p.description = data.get('description', p.description)
             p.keywords = data.get('keywords', p.keywords)
             p.price = price
             p.stock = stock
-            
+
             cat_id = data.get('category_id')
             if cat_id:
                 try:
                     p.category = Category.objects.get(pk=cat_id)
                 except Category.DoesNotExist:
                     return JsonResponse({"error": "Category not found"}, status=400)
-            else:
+            elif 'category_id' in data:
                 p.category = None
-                
+
             p.save()
             return JsonResponse({"message": "Updated Successfully"}, status=200)
         except ValueError:

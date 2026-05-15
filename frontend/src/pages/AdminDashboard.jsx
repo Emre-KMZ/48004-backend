@@ -510,7 +510,7 @@ export default function AdminDashboard() {
                 <tr key={p.id} style={{ borderBottom: '1px solid #eee', background: isWarning ? '#FFF5F5' : 'transparent' }}>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={p.images && p.images.length > 0 ? `${BACKEND_URL}${p.images[0].url}` : FALLBACK} alt="thumb" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}/>
+                      <img src={p.images && p.images.length > 0 ? (p.images[0].url.startsWith('http') ? p.images[0].url : `${BACKEND_URL}${p.images[0].url}`) : FALLBACK} alt="thumb" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '8px' }}/>
                       {isWarning && <AlertTriangle size={14} color="#D32F2F" style={{ position: 'absolute', top: '-4px', right: '-4px' }} />}
                     </div>
                   </td>
@@ -831,7 +831,7 @@ export default function AdminDashboard() {
                     {editProduct.images && editProduct.images.length > 0 ? (
                       editProduct.images.map((img, i) => (
                         <div key={img.id} draggable onDragStart={e => handleDragStartEdit(e, i)} onDragEnter={e => handleDragEnterEdit(e, i)} onDragEnd={handleDragEndEdit} onDragOver={e => e.preventDefault()} style={{ position: 'relative', border: i===0?'2px solid #2e7d32':'1px solid #ccc', borderRadius: '4px', overflow: 'hidden', cursor: 'grab', transition: 'transform 0.2s' }}>
-                          <img src={`${BACKEND_URL}${img.url}`} alt="gallery" style={{ width: '100%', height: '100px', objectFit: 'cover', display: 'block' }} />
+                          <img src={img.url.startsWith('http') ? img.url : `${BACKEND_URL}${img.url}`} alt="gallery" style={{ width: '100%', height: '100px', objectFit: 'cover', display: 'block' }} />
                           {i===0 && <span style={{position:'absolute', bottom:0, background:'rgba(0,0,0,0.6)', color:'white', fontSize:'12px', width:'100%', textAlign:'center'}}>THUMBNAIL</span>}
                           <button type="button" onClick={() => handleSpecificImageDelete(img.id)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'red', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold', lineHeight: '10px' }}>&times;</button>
                         </div>

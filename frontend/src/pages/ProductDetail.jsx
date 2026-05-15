@@ -46,7 +46,7 @@ export default function ProductDetail() {
   if (!product) return <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'Outfit' }}>Loading Details...</div>;
 
   const hasImages = product && product.images && product.images.length > 0;
-  const currentImg = hasImages ? `${BACKEND_URL}${product.images[currentImgIdx].url}` : FALLBACK_IMAGE;
+  const currentImg = hasImages ? (product.images[currentImgIdx].url.startsWith('http') ? product.images[currentImgIdx].url : `${BACKEND_URL}${product.images[currentImgIdx].url}`) : FALLBACK_IMAGE;
 
   const handlePrev = () => { if (currentImgIdx > 0) setCurrentImgIdx(currentImgIdx - 1); };
   const handleNext = () => { if (hasImages && currentImgIdx < product.images.length - 1) setCurrentImgIdx(currentImgIdx + 1); };
@@ -91,7 +91,7 @@ export default function ProductDetail() {
             {product.images && product.images.map((img, idx) => (
               <img
                 key={img.id}
-                src={`${BACKEND_URL}${img.url}`}
+                src={img.url.startsWith('http') ? img.url : `${BACKEND_URL}${img.url}`}
                 onClick={() => setCurrentImgIdx(idx)}
                 style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', cursor: 'pointer', border: currentImgIdx === idx ? '2px solid #E91E63' : '1px solid #F8BBD0', transition: 'all 0.2s', boxShadow: currentImgIdx === idx ? '0 2px 5px rgba(233,30,99,0.2)' : 'none' }}
                 alt="Sub"

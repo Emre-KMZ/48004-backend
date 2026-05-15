@@ -107,8 +107,8 @@ def login_user(request):
         return JsonResponse({"error": "Invalid request body format."}, status=400)
 
 
-from django.db.models import Q, Count
-from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem
+from django.db.models import Q, Count, F, Avg
+from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem, ProductChangeLog
 from django.db import transaction
 
 
@@ -1094,4 +1094,277 @@ def verify_admin(request):
         "role": user.role,
         "is_staff": user.is_staff,
         "is_superuser": user.is_superuser,
+    }, status=200)
+
+
+# ----------------------------
+# QUICK UPDATES API (Inline Edit & Bulk)
+# ----------------------------
+@csrf_exempt
+def admin_quick_update_product(request, product_id):
+    if request.method != "PATCH":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body"}, status=400)
+
+    field = data.get("field")
+    value = data.get("value")
+
+    if field not in ("price", "stock"):
+        return JsonResponse({"error": "Only 'price' and 'stock' fields can be quick-updated"}, status=400)
+
+    try:
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product_id)
+
+            if field == "price":
+                try:
+                    new_price = float(value)
+                except (TypeError, ValueError):
+                    return JsonResponse({"error": "Invalid price format"}, status=400)
+                if new_price < 0.01:
+                    return JsonResponse({"error": "Price must be at least 0.01"}, status=400)
+
+                old_price = str(product.price)
+                product.price = new_price
+                product.save(update_fields=["price", "updated_at"])
+
+                ProductChangeLog.objects.create(
+                    product=product,
+                    field_changed="price",
+                    old_value=old_price,
+                    new_value=str(new_price),
+                    changed_by=admin_user,
+                    source="manual",
+                )
+
+                return JsonResponse({
+                    "message": "Price updated",
+                    "product_id": product.id,
+                    "field": "price",
+                    "new_value": str(product.price),
+                }, status=200)
+
+            elif field == "stock":
+                try:
+                    new_stock = int(value)
+                except (TypeError, ValueError):
+                    return JsonResponse({"error": "Invalid stock format"}, status=400)
+                if new_stock < 0:
+                    return JsonResponse({"error": "Stock cannot be negative"}, status=400)
+
+                old_stock = str(product.stock)
+                product.stock = new_stock
+                product.save(update_fields=["stock", "is_available", "updated_at"])
+
+                ProductChangeLog.objects.create(
+                    product=product,
+                    field_changed="stock",
+                    old_value=old_stock,
+                    new_value=str(new_stock),
+                    changed_by=admin_user,
+                    source="manual",
+                )
+
+                return JsonResponse({
+                    "message": "Stock updated",
+                    "product_id": product.id,
+                    "field": "stock",
+                    "new_value": product.stock,
+                    "is_available": product.is_available,
+                }, status=200)
+
+    except Product.DoesNotExist:
+        return JsonResponse({"error": "Product not found"}, status=404)
+
+
+@csrf_exempt
+def admin_bulk_update_products(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid request body"}, status=400)
+
+    product_ids = data.get("product_ids", [])
+    action = data.get("action")
+    field = data.get("field")
+    value = data.get("value")
+
+    if not product_ids or not isinstance(product_ids, list):
+        return JsonResponse({"error": "product_ids must be a non-empty array"}, status=400)
+    if field not in ("price", "stock"):
+        return JsonResponse({"error": "field must be 'price' or 'stock'"}, status=400)
+    if action not in ("set", "increase_percent", "decrease_percent", "increase_fixed", "decrease_fixed", "add_units"):
+        return JsonResponse({"error": "Invalid action"}, status=400)
+
+    results = []
+    errors = []
+
+    try:
+        with transaction.atomic():
+            products = Product.objects.select_for_update().filter(id__in=product_ids)
+            product_map = {p.id: p for p in products}
+
+            for pid in product_ids:
+                product = product_map.get(pid)
+                if not product:
+                    errors.append({"product_id": pid, "error": "Product not found"})
+                    continue
+
+                if field == "price":
+                    old_val = float(product.price)
+                    if action == "set":
+                        new_val = float(value)
+                    elif action == "increase_percent":
+                        new_val = old_val * (1 + float(value) / 100)
+                    elif action == "decrease_percent":
+                        new_val = old_val * (1 - float(value) / 100)
+                    elif action == "increase_fixed":
+                        new_val = old_val + float(value)
+                    elif action == "decrease_fixed":
+                        new_val = old_val - float(value)
+                    else:
+                        errors.append({"product_id": pid, "error": "Invalid action for price"})
+                        continue
+
+                    new_val = round(new_val, 2)
+                    if new_val < 0.01:
+                        errors.append({"product_id": pid, "error": f"Resulting price {new_val} is below minimum 0.01"})
+                        continue
+
+                    product.price = new_val
+                    product.save(update_fields=["price", "updated_at"])
+
+                    ProductChangeLog.objects.create(
+                        product=product,
+                        field_changed="price",
+                        old_value=str(old_val),
+                        new_value=str(new_val),
+                        changed_by=admin_user,
+                        source="bulk",
+                    )
+
+                    results.append({
+                        "product_id": product.id,
+                        "field": "price",
+                        "old_value": str(old_val),
+                        "new_value": str(new_val),
+                    })
+
+                elif field == "stock":
+                    old_val = product.stock
+                    if action == "set":
+                        new_val = int(value)
+                    elif action == "add_units":
+                        new_val = old_val + int(value)
+                    elif action == "increase_percent":
+                        new_val = int(old_val * (1 + float(value) / 100))
+                    elif action == "decrease_percent":
+                        new_val = int(old_val * (1 - float(value) / 100))
+                    elif action == "increase_fixed":
+                        new_val = old_val + int(value)
+                    elif action == "decrease_fixed":
+                        new_val = old_val - int(value)
+                    else:
+                        errors.append({"product_id": pid, "error": "Invalid action for stock"})
+                        continue
+
+                    if new_val < 0:
+                        errors.append({"product_id": pid, "error": f"Resulting stock {new_val} would be negative"})
+                        continue
+
+                    product.stock = new_val
+                    product.save(update_fields=["stock", "is_available", "updated_at"])
+
+                    ProductChangeLog.objects.create(
+                        product=product,
+                        field_changed="stock",
+                        old_value=str(old_val),
+                        new_value=str(new_val),
+                        changed_by=admin_user,
+                        source="bulk",
+                    )
+
+                    results.append({
+                        "product_id": product.id,
+                        "field": "stock",
+                        "old_value": old_val,
+                        "new_value": new_val,
+                        "is_available": product.is_available,
+                    })
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({
+        "message": f"Bulk update complete. {len(results)} succeeded, {len(errors)} failed.",
+        "updated": results,
+        "errors": errors,
+    }, status=200)
+
+
+@csrf_exempt
+def admin_product_change_log(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    product_id = request.GET.get("product_id")
+    limit = int(request.GET.get("limit", 50))
+
+    logs = ProductChangeLog.objects.select_related("product", "changed_by").all()
+    if product_id:
+        logs = logs.filter(product_id=product_id)
+
+    logs = logs[:limit]
+
+    result = []
+    for log in logs:
+        result.append({
+            "id": log.id,
+            "product_id": log.product_id,
+            "product_name": log.product.name,
+            "field_changed": log.field_changed,
+            "old_value": log.old_value,
+            "new_value": log.new_value,
+            "changed_by": log.changed_by.email if log.changed_by else None,
+            "changed_at": log.changed_at.isoformat(),
+            "source": log.source,
+        })
+
+    return JsonResponse({"logs": result}, status=200)
+
+
+@csrf_exempt
+def admin_product_price_stats(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    admin_user = is_admin_user(request)
+    if not admin_user:
+        return JsonResponse({"error": "Admin access required"}, status=403)
+
+    stats = Product.objects.aggregate(
+        avg_price=Avg("price"),
+    )
+
+    return JsonResponse({
+        "avg_price": str(stats["avg_price"] or 0),
     }, status=200)

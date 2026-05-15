@@ -46,6 +46,11 @@ urlpatterns = [
     path("api/admin/orders/", views.admin_list_orders, name="admin_list_orders"),
     path("api/admin/orders/<int:order_id>/", views.admin_order_status_update, name="admin_order_status_update"),
 
+    path("api/admin/products/<int:product_id>/quick-update/", views.admin_quick_update_product, name="admin_quick_update_product"),
+    path("api/admin/products/bulk-update/", views.admin_bulk_update_products, name="admin_bulk_update_products"),
+    path("api/admin/products/change-log/", views.admin_product_change_log, name="admin_product_change_log"),
+    path("api/admin/products/price-stats/", views.admin_product_price_stats, name="admin_product_price_stats"),
+
 ]
 
 if settings.DEBUG:

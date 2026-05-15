@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import ProductGallery from "./pages/ProductGallery";
 import ProductDetail from "./pages/ProductDetail";
 import AdminDashboard from "./pages/AdminDashboard";
+import QuickUpdates from "./pages/QuickUpdates";
 import Checkout from "./pages/Checkout";
 import Basket from "./pages/Basket";
 import OrderHistory from "./pages/OrderHistory";
@@ -119,6 +120,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/:section" element={<AdminDashboard />} />
+              <Route path="/admin/quick-updates" element={<QuickUpdates />} />
             </Route>
             
           </Routes>

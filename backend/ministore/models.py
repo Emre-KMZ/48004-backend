@@ -283,3 +283,37 @@ def handle_order_status_inventory_transitions(sender, instance, **kwargs):
 def restock_on_order_delete(sender, instance, **kwargs):
     if instance.status != Order.Status.CANCELLED:
         _adjust_inventory_for_order(instance, increment=True)
+
+
+class OrderStatusHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    old_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"Order #{self.order_id}: {self.old_status} -> {self.new_status}"
+
+
+class ProductChangeLog(models.Model):
+    class FieldChanged(models.TextChoices):
+        PRICE = "price", "Price"
+        STOCK = "stock", "Stock"
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="change_logs")
+    field_changed = models.CharField(max_length=20, choices=FieldChanged.choices)
+    old_value = models.CharField(max_length=255)
+    new_value = models.CharField(max_length=255)
+    changed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+    source = models.CharField(max_length=50, default="manual", help_text="manual, bulk, or flash_sale")
+
+    class Meta:
+        ordering = ["-changed_at"]
+
+    def __str__(self):
+        return f"{self.product.name}: {self.field_changed} {self.old_value} -> {self.new_value}"

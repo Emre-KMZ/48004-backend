@@ -386,6 +386,23 @@ export default function AdminDashboard() {
         >
           Order Management
         </button>
+        <button
+          onClick={() => navigate('/admin/quick-updates')}
+          style={{
+            padding: '0.6rem 1.2rem',
+            background: activeTab === 'quick-updates' ? '#333' : '#f4f4f4',
+            color: activeTab === 'quick-updates' ? 'white' : '#555',
+            border: 'none',
+            borderRadius: '25px',
+            cursor: 'pointer',
+            fontFamily: 'Outfit',
+            fontWeight: '600',
+            transition: 'all 0.2s',
+            boxShadow: activeTab === 'quick-updates' ? '0 4px 6px rgba(0,0,0,0.1)' : 'none'
+          }}
+        >
+          Quick Updates
+        </button>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem' }}>
           <button
             onClick={() => navigate('/')}

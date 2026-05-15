@@ -27,7 +27,7 @@ services:
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadminpassword
       - MINIO_BUCKET=product-images
-      - MINIO_DOMAIN=localhost:9000
+      - MINIO_DOMAIN=localhost:9000/product-images
     depends_on:
       - minio
     command: python manage.py runserver 0.0.0.0:8000

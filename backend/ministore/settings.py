@@ -102,5 +102,7 @@ if env.str('MINIO_ENDPOINT', default=''):
     AWS_S3_FILE_OVERWRITE = False
     AWS_DEFAULT_ACL = 'public-read'
     AWS_S3_ADDRESSING_STYLE = 'path'
+    AWS_S3_USE_SSL = False
+    AWS_S3_URL_PROTOCOL = 'http:'
     AWS_S3_CUSTOM_DOMAIN = env.str('MINIO_DOMAIN', default=f"localhost:9000/{AWS_STORAGE_BUCKET_NAME}")
     MEDIA_URL = f"http://{AWS_S3_CUSTOM_DOMAIN}/"

@@ -108,7 +108,7 @@ def login_user(request):
 
 
 from django.db.models import Q, Count
-from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem, OrderStatusHistory
+from .models import Product, ProductImage, Category, Cart, CartItem, Order, OrderItem
 from django.db import transaction
 
 
@@ -196,8 +196,13 @@ def admin_add_category(request):
     if request.method != "POST":
         return JsonResponse({"error": "Method not allowed"}, status=405)
     try:
-        name = request.POST.get('name', '')
-        description = request.POST.get('description', '')
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            name = data.get('name', '')
+            description = data.get('description', '')
+        else:
+            name = request.POST.get('name', '')
+            description = request.POST.get('description', '')
         if not name:
             return JsonResponse({"error": "Category name is required"}, status=400)
         c = Category(name=name, description=description)
@@ -223,8 +228,13 @@ def admin_delete_category(request, category_id):
         return JsonResponse({"message": "Category deleted"}, status=200)
 
     elif request.method == "PUT" or request.method == "POST":
-        name = request.POST.get('name', cat.name)
-        description = request.POST.get('description', cat.description)
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+            name = data.get('name', cat.name)
+            description = data.get('description', cat.description)
+        else:
+            name = request.POST.get('name', cat.name)
+            description = request.POST.get('description', cat.description)
         cat.name = name
         cat.description = description
         if 'image' in request.FILES:
@@ -1035,6 +1045,23 @@ def admin_order_status_update(request, order_id):
         "status": order.status,
         "updated_at": order.updated_at,
     }, status=200)
+
+@csrf_exempt
+def admin_list_orders(request):
+    if request.method != "GET":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    
+    orders = Order.objects.all().order_by("-created_at")
+    result = []
+    for o in orders:
+        result.append({
+            "id": o.id,
+            "customer_name": o.contact_name or o.user.full_name or o.user.email,
+            "total_price": str(o.total_price),
+            "status": o.status,
+            "created_at": o.created_at.isoformat(),
+        })
+    return JsonResponse(result, safe=False, status=200)
 
 from django.core.cache import cache
 

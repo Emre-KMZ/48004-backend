@@ -102,7 +102,7 @@ export const CartProvider = ({ children }) => {
           is_available: stock > 0,
           is_out_of_stock: stock <= 0,
           exceeds_stock: quantity > stock,
-          image_url: product.images?.length > 0 ? `${BACKEND_URL}${product.images[0].url}` : null,
+          image_url: product.images?.length > 0 ? (product.images[0].url.startsWith('http') ? product.images[0].url : `${BACKEND_URL}${product.images[0].url}`) : null,
         });
       }
       setItems(updated);

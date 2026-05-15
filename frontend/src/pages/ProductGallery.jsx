@@ -134,7 +134,8 @@ export default function ProductGallery({ sidebarOpen }) {
           {/* PRODUCT GRID */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, 200px)', gap: '1.5rem', justifyContent: 'flex-start' }}>
             {products.map(p => {
-              const imageUrl = p.images && p.images.length > 0 ? `${BACKEND_URL}${p.images[0].url}` : FALLBACK_IMAGE;
+              const getImageUrl = (url) => url.startsWith('http') ? url : `${BACKEND_URL}${url}`;
+              const imageUrl = p.images && p.images.length > 0 ? getImageUrl(p.images[0].url) : FALLBACK_IMAGE;
               const qty = getQty(p.id);
               const justAdded = addedMap[p.id];
 

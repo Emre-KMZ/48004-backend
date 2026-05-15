@@ -2,3 +2,7 @@ Django>=5.0,<6.0
 django-cors-headers
 PyJWT
 Pillow
+
+django-storages
+boto3
+django-environ

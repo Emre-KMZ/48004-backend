@@ -1,6 +1,11 @@
 from pathlib import Path
+import environ
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env()
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 SECRET_KEY = "dev-secret-key-change-me"
 DEBUG = True
@@ -79,3 +84,15 @@ AUTH_USER_MODEL = "ministore.CustomUser"
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+if env.str('MINIO_ENDPOINT', default=''):
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    AWS_ACCESS_KEY_ID = env.str('MINIO_ACCESS_KEY')
+    AWS_SECRET_ACCESS_KEY = env.str('MINIO_SECRET_KEY')
+    AWS_STORAGE_BUCKET_NAME = env.str('MINIO_BUCKET')
+    AWS_S3_ENDPOINT_URL = env.str('MINIO_ENDPOINT')
+    AWS_S3_REGION_NAME = 'us-east-1'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = 'public-read'
+    AWS_S3_CUSTOM_DOMAIN = env.str('MINIO_DOMAIN', default=f"localhost:9000/{AWS_STORAGE_BUCKET_NAME}")
+    MEDIA_URL = f"http://{AWS_S3_CUSTOM_DOMAIN}/"

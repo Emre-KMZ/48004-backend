@@ -1,0 +1,1176 @@
+[
+{
+  "model": "ministore.customuser",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$3mWaVltkQ8tUUw1zIgTb2m$W2BkdCJLFkGXOTSeBtf6gKxzKG6K0bzsUK7tpiFuMDA=",
+    "last_login": null,
+    "is_superuser": true,
+    "email": "admin@gmail.com",
+    "full_name": "",
+    "role": "Admin",
+    "is_active": true,
+    "is_staff": true,
+    "date_joined": "2026-05-15T00:39:39.307Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 1,
+  "fields": {
+    "name": "Cat Accesories",
+    "description": "",
+    "slug": "cat-accesories",
+    "image": "",
+    "created_at": "2026-05-15T00:50:23.339Z"
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 2,
+  "fields": {
+    "name": "Dog Accessories",
+    "description": "",
+    "slug": "dog-accessories",
+    "image": "",
+    "created_at": "2026-05-15T00:51:14.557Z"
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 3,
+  "fields": {
+    "name": "Cat Foods",
+    "description": "",
+    "slug": "cat-foods",
+    "image": "",
+    "created_at": "2026-05-15T00:51:25.624Z"
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 4,
+  "fields": {
+    "name": "Dog Foods",
+    "description": "",
+    "slug": "dog-foods",
+    "image": "",
+    "created_at": "2026-05-15T00:51:29.826Z"
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 5,
+  "fields": {
+    "name": "Dog Toys",
+    "description": "",
+    "slug": "dog-toys",
+    "image": "",
+    "created_at": "2026-05-15T00:51:56.160Z"
+  }
+},
+{
+  "model": "ministore.category",
+  "pk": 6,
+  "fields": {
+    "name": "Cat Toys",
+    "description": "",
+    "slug": "cat-toys",
+    "image": "",
+    "created_at": "2026-05-15T00:52:00.702Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 1,
+  "fields": {
+    "name": "Royal Canın Gastrointestinal Dog Food",
+    "description": "Dog food for dogs with bad stomachs.",
+    "keywords": "Dog, Food, Bad Stomach",
+    "price": "55.00",
+    "stock": 110,
+    "is_available": true,
+    "category": 4,
+    "is_active": true,
+    "created_at": "2026-05-15T00:58:19.498Z",
+    "updated_at": "2026-05-15T00:58:19.498Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 2,
+  "fields": {
+    "name": "Hills Digestive Care Dog Food",
+    "description": "Diet dog food",
+    "keywords": "Dog Diet, Dog, Food, Overweight dog",
+    "price": "45.00",
+    "stock": 33,
+    "is_available": true,
+    "category": 4,
+    "is_active": true,
+    "created_at": "2026-05-15T00:59:36.077Z",
+    "updated_at": "2026-05-15T00:59:36.077Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 3,
+  "fields": {
+    "name": "Purina Proplan GastroEntric Dog Food",
+    "description": "Premium dog food",
+    "keywords": "Premium, high quality, good food",
+    "price": "110.00",
+    "stock": 12,
+    "is_available": true,
+    "category": 4,
+    "is_active": true,
+    "created_at": "2026-05-15T01:01:06.295Z",
+    "updated_at": "2026-05-15T01:01:06.295Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 4,
+  "fields": {
+    "name": "Royal Canin Gastrointestinal Cat Food",
+    "description": "Cat food for cats with bad stomachs",
+    "keywords": "Cat, food, bad stomach.",
+    "price": "56.00",
+    "stock": 95,
+    "is_available": true,
+    "category": 3,
+    "is_active": true,
+    "created_at": "2026-05-15T01:02:10.637Z",
+    "updated_at": "2026-05-15T01:02:10.637Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 5,
+  "fields": {
+    "name": "Hills Digestive Care Cat Food",
+    "description": "Diet cat food",
+    "keywords": "Diet, Cat, Food, Overweight cat",
+    "price": "35.00",
+    "stock": 27,
+    "is_available": true,
+    "category": 3,
+    "is_active": true,
+    "created_at": "2026-05-15T01:03:10.779Z",
+    "updated_at": "2026-05-15T01:03:10.779Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 6,
+  "fields": {
+    "name": "Purina Proplan Premium Cat Food",
+    "description": "Premium Cat food made with real ribbs.",
+    "keywords": "ribbs, premium, cat food",
+    "price": "125.00",
+    "stock": 4,
+    "is_available": true,
+    "category": 3,
+    "is_active": true,
+    "created_at": "2026-05-15T01:04:17.724Z",
+    "updated_at": "2026-05-15T01:04:17.724Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 7,
+  "fields": {
+    "name": "Cozy Cat Stand",
+    "description": "A cozy cat stand for your cats to spent cozy time with.",
+    "keywords": "Cozy, Cat stand, Sleep, bed",
+    "price": "270.00",
+    "stock": 15,
+    "is_available": true,
+    "category": 1,
+    "is_active": true,
+    "created_at": "2026-05-15T01:06:03.778Z",
+    "updated_at": "2026-05-15T01:06:03.778Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 8,
+  "fields": {
+    "name": "Smart Cat Toilet",
+    "description": "A smart cat toilet that spins and cleans the cat sand over periods of time.",
+    "keywords": "Toilet, Clean toiler, smart",
+    "price": "350.00",
+    "stock": 20,
+    "is_available": true,
+    "category": 1,
+    "is_active": true,
+    "created_at": "2026-05-15T01:07:41.217Z",
+    "updated_at": "2026-05-15T01:07:41.217Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 9,
+  "fields": {
+    "name": "Cat Water Fountain",
+    "description": "An automatic working fountain which cleans the water overtime with filtering.",
+    "keywords": "Filter, clean water, fountain",
+    "price": "200.00",
+    "stock": 2,
+    "is_available": true,
+    "category": 1,
+    "is_active": true,
+    "created_at": "2026-05-15T01:09:27.225Z",
+    "updated_at": "2026-05-15T01:09:27.225Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 10,
+  "fields": {
+    "name": "Pet Fusion",
+    "description": "A toy for your cats that plays random movement sticked on a piece of fair",
+    "keywords": "toy, fast cat toy, non stoping",
+    "price": "25.00",
+    "stock": 56,
+    "is_available": true,
+    "category": 6,
+    "is_active": true,
+    "created_at": "2026-05-15T01:11:35.009Z",
+    "updated_at": "2026-05-15T01:11:35.009Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 11,
+  "fields": {
+    "name": "Flapping Fish Cat Toy",
+    "description": "A flapping fish toy that makes cats go crazy.",
+    "keywords": "Fish toy, flappy",
+    "price": "12.00",
+    "stock": 154,
+    "is_available": true,
+    "category": 6,
+    "is_active": true,
+    "created_at": "2026-05-15T01:13:26.346Z",
+    "updated_at": "2026-05-15T01:13:26.346Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 12,
+  "fields": {
+    "name": "YEAOOV Cat Toy",
+    "description": "A banana pillow for cats that is filled with kitnap makes cats turn in circles.",
+    "keywords": "Catnip",
+    "price": "4.00",
+    "stock": 39,
+    "is_available": true,
+    "category": 6,
+    "is_active": true,
+    "created_at": "2026-05-15T01:14:46.816Z",
+    "updated_at": "2026-05-15T01:14:46.816Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 13,
+  "fields": {
+    "name": "Dog Body Frame",
+    "description": "A dog body frame to attach the leash on which is much more comfortable for most of the dogs compared to collars.",
+    "keywords": "Leash, collar, body leash",
+    "price": "95.00",
+    "stock": 27,
+    "is_available": true,
+    "category": 2,
+    "is_active": true,
+    "created_at": "2026-05-15T01:16:24.801Z",
+    "updated_at": "2026-05-15T01:16:24.801Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 14,
+  "fields": {
+    "name": "Fun Feeder",
+    "description": "A dog plate that makes dogs eat slower",
+    "keywords": "dog food, dog, plate",
+    "price": "35.00",
+    "stock": 200,
+    "is_available": true,
+    "category": 2,
+    "is_active": true,
+    "created_at": "2026-05-15T01:17:35.937Z",
+    "updated_at": "2026-05-15T01:17:35.937Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 15,
+  "fields": {
+    "name": "Furbo Dog Camera",
+    "description": "A dog camera that is able to turn 360 degrees and able to communicate over.",
+    "keywords": "Dog camera, camera",
+    "price": "300.00",
+    "stock": 40,
+    "is_available": true,
+    "category": 2,
+    "is_active": true,
+    "created_at": "2026-05-15T01:19:12.586Z",
+    "updated_at": "2026-05-15T01:19:12.586Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 16,
+  "fields": {
+    "name": "Kong Classic",
+    "description": "A chewing toy for dogs",
+    "keywords": "Chewing, baby dog toy",
+    "price": "5.00",
+    "stock": 168,
+    "is_available": true,
+    "category": 5,
+    "is_active": true,
+    "created_at": "2026-05-15T01:20:14.099Z",
+    "updated_at": "2026-05-15T01:20:14.099Z"
+  }
+},
+{
+  "model": "ministore.product",
+  "pk": 17,
+  "fields": {
+    "name": "Chuck it! Ultra Ball",
+    "description": "A dog ball for playing fetch and catch",
+    "keywords": "ball, baseball, fetch game",
+    "price": "15.00",
+    "stock": 134,
+    "is_available": true,
+    "category": 5,
+    "is_active": true,
+    "created_at": "2026-05-15T01:21:30.686Z",
+    "updated_at": "2026-05-15T01:21:30.686Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 1,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_7386b691.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.501Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 2,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_34bf0664.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.503Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 3,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_30c815ae.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.505Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 4,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_c5d8d7a5.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.508Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 5,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_33f8a99d.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.511Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 6,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_32e9592d.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.512Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 7,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_97ff08c5.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.513Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 8,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_49bf93a3.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.514Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 9,
+  "fields": {
+    "product": 1,
+    "image": "products/images/product_1_e55696da.webp",
+    "order": 0,
+    "created_at": "2026-05-15T00:58:19.515Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 10,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_8600ef5d.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.081Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 11,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_f9fcd158.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.083Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 12,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_f1e7beb0.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.084Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 13,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_1c59cc8d.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.086Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 14,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_42163791.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.088Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 15,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_24df4120.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.090Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 16,
+  "fields": {
+    "product": 2,
+    "image": "products/images/product_2_be224f56.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T00:59:36.091Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 17,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_4755ad0a.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.298Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 18,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_bc50f43d.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.299Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 19,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_ab083d7d.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.301Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 20,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_2916e370.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.303Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 21,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_cfd62d6b.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.305Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 22,
+  "fields": {
+    "product": 3,
+    "image": "products/images/product_3_18bc7502.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:01:06.307Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 23,
+  "fields": {
+    "product": 4,
+    "image": "products/images/product_4_95a0caae.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:02:10.639Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 24,
+  "fields": {
+    "product": 4,
+    "image": "products/images/product_4_f795c5e8.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:02:10.641Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 25,
+  "fields": {
+    "product": 4,
+    "image": "products/images/product_4_6a7fef61.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:02:10.643Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 26,
+  "fields": {
+    "product": 4,
+    "image": "products/images/product_4_93ab2d92.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:02:10.645Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 27,
+  "fields": {
+    "product": 4,
+    "image": "products/images/product_4_a7ab7cac.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:02:10.646Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 28,
+  "fields": {
+    "product": 5,
+    "image": "products/images/product_5_89635406.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:03:10.782Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 29,
+  "fields": {
+    "product": 5,
+    "image": "products/images/product_5_ead4362b.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:03:10.783Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 30,
+  "fields": {
+    "product": 5,
+    "image": "products/images/product_5_9d9cd9af.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:03:10.785Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 31,
+  "fields": {
+    "product": 5,
+    "image": "products/images/product_5_d068a65f.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:03:10.787Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 32,
+  "fields": {
+    "product": 6,
+    "image": "products/images/product_6_4d86eb51.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:04:17.727Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 33,
+  "fields": {
+    "product": 6,
+    "image": "products/images/product_6_ebf97a51.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:04:17.728Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 34,
+  "fields": {
+    "product": 7,
+    "image": "products/images/product_7_6044adc0.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:06:03.781Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 35,
+  "fields": {
+    "product": 7,
+    "image": "products/images/product_7_2e990665.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:06:03.782Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 36,
+  "fields": {
+    "product": 7,
+    "image": "products/images/product_7_d1d4d893.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:06:03.784Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 37,
+  "fields": {
+    "product": 7,
+    "image": "products/images/product_7_a0941c3b.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:06:03.786Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 38,
+  "fields": {
+    "product": 7,
+    "image": "products/images/product_7_de641989.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:06:03.788Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 39,
+  "fields": {
+    "product": 8,
+    "image": "products/images/product_8_761f2ade.png",
+    "order": 0,
+    "created_at": "2026-05-15T01:07:41.219Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 40,
+  "fields": {
+    "product": 8,
+    "image": "products/images/product_8_8ba8ed12.png",
+    "order": 0,
+    "created_at": "2026-05-15T01:07:41.220Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 41,
+  "fields": {
+    "product": 8,
+    "image": "products/images/product_8_8544b4ec.png",
+    "order": 0,
+    "created_at": "2026-05-15T01:07:41.222Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 42,
+  "fields": {
+    "product": 8,
+    "image": "products/images/product_8_0546a2e7.png",
+    "order": 0,
+    "created_at": "2026-05-15T01:07:41.223Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 43,
+  "fields": {
+    "product": 9,
+    "image": "products/images/product_9_567647f4.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:09:27.228Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 44,
+  "fields": {
+    "product": 9,
+    "image": "products/images/product_9_84982dd8.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:09:27.229Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 45,
+  "fields": {
+    "product": 9,
+    "image": "products/images/product_9_92d7a47d.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:09:27.231Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 46,
+  "fields": {
+    "product": 9,
+    "image": "products/images/product_9_3ca04e7f.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:09:27.233Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 47,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_e1fdb599.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.012Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 48,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_fb1f4a43.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.014Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 49,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_4f7ed050.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.016Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 50,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_f19dcbb1.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.018Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 51,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_c901e8bf.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.020Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 52,
+  "fields": {
+    "product": 10,
+    "image": "products/images/product_10_1f214133.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:11:35.022Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 53,
+  "fields": {
+    "product": 11,
+    "image": "products/images/product_11_2db5cebb.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:13:26.348Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 54,
+  "fields": {
+    "product": 11,
+    "image": "products/images/product_11_7a1ad3e9.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:13:26.350Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 55,
+  "fields": {
+    "product": 11,
+    "image": "products/images/product_11_0074a8ab.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:13:26.351Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 56,
+  "fields": {
+    "product": 11,
+    "image": "products/images/product_11_69ada590.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:13:26.353Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 57,
+  "fields": {
+    "product": 11,
+    "image": "products/images/product_11_287e6028.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:13:26.354Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 58,
+  "fields": {
+    "product": 12,
+    "image": "products/images/product_12_41af5b0b.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:14:46.819Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 59,
+  "fields": {
+    "product": 13,
+    "image": "products/images/product_13_b96b54ce.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:16:24.804Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 60,
+  "fields": {
+    "product": 13,
+    "image": "products/images/product_13_ee5cf1b7.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:16:24.805Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 61,
+  "fields": {
+    "product": 13,
+    "image": "products/images/product_13_83c41348.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:16:24.807Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 62,
+  "fields": {
+    "product": 13,
+    "image": "products/images/product_13_2cd9ad60.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:16:24.809Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 63,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_f2a6bfe4.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.939Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 64,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_14c99f14.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.941Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 65,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_6c73a8a9.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.943Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 66,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_8a1f976b.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.945Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 67,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_284785c3.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.947Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 68,
+  "fields": {
+    "product": 14,
+    "image": "products/images/product_14_111f874a.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:17:35.949Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 69,
+  "fields": {
+    "product": 15,
+    "image": "products/images/product_15_9045b975.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:19:12.589Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 70,
+  "fields": {
+    "product": 15,
+    "image": "products/images/product_15_00742c6a.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:19:12.591Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 71,
+  "fields": {
+    "product": 15,
+    "image": "products/images/product_15_2459e5b0.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:19:12.593Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 72,
+  "fields": {
+    "product": 15,
+    "image": "products/images/product_15_719d2dce.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:19:12.595Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 73,
+  "fields": {
+    "product": 15,
+    "image": "products/images/product_15_dcc82943.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:19:12.598Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 74,
+  "fields": {
+    "product": 16,
+    "image": "products/images/product_16_c8bacf26.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:20:14.102Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 75,
+  "fields": {
+    "product": 16,
+    "image": "products/images/product_16_5d4cea4f.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:20:14.104Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 76,
+  "fields": {
+    "product": 16,
+    "image": "products/images/product_16_28d521ec.webp",
+    "order": 0,
+    "created_at": "2026-05-15T01:20:14.106Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 77,
+  "fields": {
+    "product": 17,
+    "image": "products/images/product_17_cc3facfc.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:21:30.689Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 78,
+  "fields": {
+    "product": 17,
+    "image": "products/images/product_17_b0362338.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:21:30.691Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 79,
+  "fields": {
+    "product": 17,
+    "image": "products/images/product_17_e67693de.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:21:30.693Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 80,
+  "fields": {
+    "product": 17,
+    "image": "products/images/product_17_80085b37.png",
+    "order": 0,
+    "created_at": "2026-05-15T01:21:30.695Z"
+  }
+},
+{
+  "model": "ministore.productimage",
+  "pk": 81,
+  "fields": {
+    "product": 17,
+    "image": "products/images/product_17_4870a8dd.jpg",
+    "order": 0,
+    "created_at": "2026-05-15T01:21:30.698Z"
+  }
+},
+{
+  "model": "ministore.cart",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "created_at": "2026-05-15T00:41:32.268Z",
+    "updated_at": "2026-05-15T00:41:32.268Z"
+  }
+}
+]

@@ -10,6 +10,9 @@ class Command(BaseCommand):
     help = 'Resets database to current_state.json and uploads initial_media to Minio'
 
     def handle(self, *args, **options):
+        self.stdout.write("Running database migrations...")
+        call_command('migrate', interactive=False)
+        
         self.stdout.write("Clearing existing data...")
         Order.objects.all().delete()
         Product.objects.all().delete()
